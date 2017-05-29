@@ -412,11 +412,24 @@ __kernel void searchastar_playground(__global infonode *infonodes,
 
 		int num = get_global_id(0);
 		int numLocal = get_local_id(0);
+		node sucesor;
 
 		int i = 0;
 		int reps = 0;
 
-		return;
+		while(true){
+			if(reps > 0){
+				return;
+			}
+
+			reps++;
+
+			if(num != 128){
+				return;
+			}
+		}
+
+		out_result[0] = sucesor;
 }
 
 __kernel void searchastar(__global infonode *infonodes,
@@ -515,10 +528,12 @@ __kernel void searchastar(__global infonode *infonodes,
 
 	while(globalReps < max){
 
+		/*
 		if(numExpansionesChild > 0){
 			printf("BYE: %d\n", num);
 			return;
 		}
+		*/
 
 		if(nlongs[0] == 0 || found){
 			break;
@@ -624,7 +639,7 @@ __kernel void searchastar(__global infonode *infonodes,
 			ulong k = num;
 			bool flagNodeToExpand = false;
 
-			if(num == 128){
+			//if(num == 128){
 			while(numExpansionesChild == numExpansiones){
 				//printf("anteriorid: %ld\n", anteriorid);
 				reps++;
@@ -729,12 +744,12 @@ __kernel void searchastar(__global infonode *infonodes,
 
 			}//while numExpansionesChild == numExpansiones
 
-			printf("S-EXIT ITER\n");
-			}
+			//printf("S-EXIT ITER\n");
+			//}
 			numExpansionesChild++;
 		}//end else num
-
 		
+		/*
 		if(num == 0){
 		printf("P-LLEGA\n");
 			return;
@@ -747,51 +762,19 @@ __kernel void searchastar(__global infonode *infonodes,
 		printf("numExpansiones: %d\n", numExpansiones);
 		printf("numExpansionesChild: %d\n", numExpansionesChild);
 		printf("globalReps: %d\n", globalReps);
-
+		*/
 	
 
 		//return;
 	}//while principal
 
-
-	return;
+	printf("FUCKER %d SALE\n", num);
 
 	if(num == 0){
-		if(max <= globalReps){
-
-				printf("P-TIME LIMIT\n");
-				sucesor.id = 0;
-				sucesor.type = 0;
-				sucesor.parent = 0;
-				
-				out_result[0] = sucesor;
-
-				atomic_xchg(&out_state[0], 2);
-
-				nlongs[2] = 0;
-
-		}
-		else{
-
-			if(found){
-
-				printf("P-FOUND\n");
-				out_result[0] = sucesor;
-
-				atomic_xchg(&out_state[0], 1);
-
-				nlongs[2] = 0;
-			}
-			else{
-				printf("P-NOTFOUND\n");
-				atomic_and(&out_state[0], 0);
-
-			}
-		}
+		atomic_and(&out_state[0], 0);
 	}
-		
 	
-	
-	printf("EXIT-F: %d\n", num);
+	//printf("EXIT-F: %d\n", num);
 
+	return;
 }
