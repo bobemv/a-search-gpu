@@ -414,19 +414,7 @@ __kernel void searchastar_playground(__global infonode *infonodes,
 		int numLocal = get_local_id(0);
 
 		int i = 0;
-		
-
-		if(num == 0){
-			printf("P-BARRIER");
-			barrier(CLK_LOCAL_MEM_FENCE);
-		}
-		else{
-			for(i=0; i< 1; i++){
-				printf("S-BARRIER");
-				barrier(CLK_LOCAL_MEM_FENCE);
-			}
-		}
-		
+		int reps = 0;
 
 		return;
 }
@@ -520,31 +508,23 @@ __kernel void searchastar(__global infonode *infonodes,
 		}
 	}
 
-	while(true){
+	/*SYNC*/
+	barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+	/*END SYNC*/
+
+
+	while(globalReps < max){
 
 		if(numExpansionesChild > 0){
 			printf("BYE: %d\n", num);
 			return;
 		}
 
-		if(globalReps > 0){
-			printf("SUBNORMAL: %d\n", num);
-			return;
-		}
-		/*SYNC*/
-		barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-		/*END SYNC*/
-
-
-
-		globalReps++;
-		if(max <= globalReps){
-			break;
-		}
-
 		if(nlongs[0] == 0 || found){
 			break;
 		}
+
+		globalReps++;
 
 		if(num == 0){
 			actual[0] = abiertos[nlongs[0]-1];
@@ -774,9 +754,10 @@ __kernel void searchastar(__global infonode *infonodes,
 	}//while principal
 
 
+	return;
 
 	if(num == 0){
-		if(max <= reps){
+		if(max <= globalReps){
 
 				printf("P-TIME LIMIT\n");
 				sucesor.id = 0;
@@ -812,4 +793,5 @@ __kernel void searchastar(__global infonode *infonodes,
 	
 	
 	printf("EXIT-F: %d\n", num);
+
 }
