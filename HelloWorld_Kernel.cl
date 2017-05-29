@@ -474,7 +474,12 @@ __kernel void searchastar(__global infonode *infonodes,
 	*/
 
 	int num = get_local_id(0);
-	//int numLocal = get_local_id(0);
+	int numGlobal = get_global_id(0);
+	int globalSize = get_global_size(0);
+	int numGroup = get_group_id(0);
+	int localSize = get_local_size(0);
+	int groupSize = get_num_groups(0);
+
 	ulong i, j, k;
 
 	node inicial;
@@ -493,6 +498,14 @@ __kernel void searchastar(__global infonode *infonodes,
 	//Thread principal
 
 	if(num == 0){
+		printf("KERNELINFO:\n");
+		printf("groupSize: %d\n", groupSize);
+		printf("globalSize: %d\n", globalSize);
+		printf("localSize: %d\n", localSize);
+		printf("numGroup: %d\n", numGroup);
+		printf("numGlobal: %d\n", numGlobal);
+		printf("num: %d\n", num);
+
 		beginToExpand = 0;
 		numExpansiones = 0;
 
@@ -528,7 +541,7 @@ __kernel void searchastar(__global infonode *infonodes,
 			//nlongs[0]--;
 
 			/*Generamos sucesores*/
-			//printf("P-Generating list of successors.\n");
+			printf("P-Generating list of successors.\n");
 			nsucesores = genera_sucesores(sucesores, conexiones, actual[0], nedges, nlongs[3]);
 
 			atomic_xchg((__global int*)&nlongs[2], nsucesores);
@@ -546,13 +559,13 @@ __kernel void searchastar(__global infonode *infonodes,
 				return;
 			}
 			else{
-				//printf("P-updating_infoThreads\n");
+				printf("P-updating_infoThreads\n");
 				for(i = 0; i < nlongs[2]; i++){
 					info_threads[i] = 3;
 				}
-				//printf("P-finished_updating\n");
+				printf("P-finished_updating\n");
 
-				
+				printf("P-beginToExpand\n");
 				atomic_xchg(&beginToExpand, 1); 
 				
 
@@ -584,6 +597,7 @@ __kernel void searchastar(__global infonode *infonodes,
 					//printf("P-%ld: %d\n", i, info_threads[i]);
 				}
 
+				printf("P-Successors expanded\n");
 				atomic_inc(&numExpansiones);
 				atomic_and(&beginToExpand, 0); 
 				
@@ -594,10 +608,10 @@ __kernel void searchastar(__global infonode *infonodes,
 				//nlongs[2] = 0; 
 
 				
-				//printf("P-updating closed list\n");
+				printf("P-updating closed list\n");
 				cerrados[nlongs[1]] = actual[0];
 				atomic_inc((__global int*)&nlongs[1]);
-				//printf("P-bubblesorting", nlongs[2]);
+				printf("P-bubblesorting");
 				bubblesort(abiertos, nlongs[0]); 
 				//printf("P-nabiertos = %ld, ncerrados = %ld\n", nlongs[0], nlongs[1]);
 
@@ -616,8 +630,15 @@ __kernel void searchastar(__global infonode *infonodes,
 			if(num == 128){
 			while(numExpansionesChild == numExpansiones){
 				//printf("anteriorid: %ld\n", anteriorid);
+				reps++;
+
+				if(reps > 10000){
+					printf("S-EXIT REP\n");
+					break;
+				}
 				while(beginToExpand == 1){
 
+					printf("S-ENTER beginToExpand\n");
 
 					if(!(k > 0 && k < nlongs[2])){
 						k = 0;
@@ -626,7 +647,7 @@ __kernel void searchastar(__global infonode *infonodes,
                     flagNodeToExpand = false;
                     for(j=k; j < nlongs[2]; j++){
                         if(info_threads[j] == 3){
-                        //printf("S-choose: [%u]\n", j);
+							printf("S-choose: [%u]\n", j);
 							atomic_xchg(&info_threads[j], num+3);
                             i = j;
                             k = j + 1;
@@ -710,6 +731,8 @@ __kernel void searchastar(__global infonode *infonodes,
                 }//while beginToExpand
 
 			}//while numExpansionesChild == numExpansiones
+
+			printf("S-EXIT ITER\n");
 			}
 			numExpansionesChild++;
 			return;
@@ -754,5 +777,5 @@ __kernel void searchastar(__global infonode *infonodes,
 		
 	
 	
-	//printf("EXIT-F: %d\n", num);
+	printf("EXIT-F: %d\n", num);
 }
