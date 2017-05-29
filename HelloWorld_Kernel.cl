@@ -521,9 +521,21 @@ __kernel void searchastar(__global infonode *infonodes,
 	}
 
 	while(true){
+
+		if(numExpansionesChild > 0){
+			printf("BYE: %d\n", num);
+			return;
+		}
+
+		if(globalReps > 0){
+			printf("SUBNORMAL: %d\n", num);
+			return;
+		}
 		/*SYNC*/
 		barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 		/*END SYNC*/
+
+
 
 		globalReps++;
 		if(max <= globalReps){
@@ -556,7 +568,8 @@ __kernel void searchastar(__global infonode *infonodes,
 				atomic_inc(&numExpansiones);
 				atomic_and(&beginToExpand, 0); 
 				//continue;
-				return;
+				//numExpansionesChild++;
+				//return;
 			}
 			else{
 				printf("P-updating_infoThreads\n");
@@ -604,7 +617,7 @@ __kernel void searchastar(__global infonode *infonodes,
 				atomic_and((__global int*)&nlongs[2], 0);
 				
 
-				return;
+				
 				//nlongs[2] = 0; 
 
 				
@@ -614,9 +627,13 @@ __kernel void searchastar(__global infonode *infonodes,
 				printf("P-bubblesorting");
 				bubblesort(abiertos, nlongs[0]); 
 				//printf("P-nabiertos = %ld, ncerrados = %ld\n", nlongs[0], nlongs[1]);
+				//numExpansionesChild++;
+				//return;
 
 			} // END IF nlongs[2] == 0
-	
+			
+			//printf("P-LLEGA\n");
+			//return;
 		}
 		else{ //Threads para sucesores	
 
@@ -735,10 +752,27 @@ __kernel void searchastar(__global infonode *infonodes,
 			printf("S-EXIT ITER\n");
 			}
 			numExpansionesChild++;
-			return;
 		}//end else num
 
+		
+		if(num == 0){
+		printf("P-LLEGA\n");
+			return;
+		}
+		
+		if(num != 128){
+			return;
+		}
+		printf("num: %d\n", num);
+		printf("numExpansiones: %d\n", numExpansiones);
+		printf("numExpansionesChild: %d\n", numExpansionesChild);
+		printf("globalReps: %d\n", globalReps);
+
+	
+
+		//return;
 	}//while principal
+
 
 
 	if(num == 0){
