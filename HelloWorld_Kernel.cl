@@ -535,6 +535,10 @@ __kernel void searchastar(__global infonode *infonodes,
 		}
 		*/
 
+		/*SYNC*/
+		barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+		/*END SYNC*/
+
 		if(nlongs[0] == 0 || found){
 			break;
 		}
@@ -548,14 +552,14 @@ __kernel void searchastar(__global infonode *infonodes,
 			//nlongs[0]--;
 
 			/*Generamos sucesores*/
-			printf("P-Generating list of successors.\n");
+			//printf("P-Generating list of successors.\n");
 			nsucesores = genera_sucesores(sucesores, conexiones, actual[0], nedges, nlongs[3]);
 
 			atomic_xchg((__global int*)&nlongs[2], nsucesores);
 			atomic_add((__global int*)&nlongs[3], nsucesores);
 			//nlongs[3] += nlongs[2];
 
-			printf("P-nsucesores: %u\n", nlongs[2]);
+			//printf("P-nsucesores: %u\n", nlongs[2]);
 
 			/*If no more successors, we go to the next node in the open nodes list.*/
 			if (nlongs[2] == 0) {
@@ -567,13 +571,13 @@ __kernel void searchastar(__global infonode *infonodes,
 				//return;
 			}
 			else{
-				printf("P-updating_infoThreads\n");
+				//printf("P-updating_infoThreads\n");
 				for(i = 0; i < nlongs[2]; i++){
 					info_threads[i] = 3;
 				}
-				printf("P-finished_updating\n");
+				//printf("P-finished_updating\n");
 
-				printf("P-beginToExpand\n");
+				//printf("P-beginToExpand\n");
 				atomic_xchg(&beginToExpand, 1); 
 				
 
@@ -590,6 +594,7 @@ __kernel void searchastar(__global infonode *infonodes,
 						case 2:
 							found = true;
 							sucesor = sucesores[i];
+							atomic_and((__global int*)&nlongs[0], 0); //Warning child threads to stop exapnding
 							break;
 						case 1:
 							abiertos[nlongs[0]] = sucesores[i];
@@ -605,7 +610,7 @@ __kernel void searchastar(__global infonode *infonodes,
 					//printf("P-%ld: %d\n", i, info_threads[i]);
 				}
 
-				printf("P-Successors expanded\n");
+				//printf("P-Successors expanded\n");
 				atomic_inc(&numExpansiones);
 				atomic_and(&beginToExpand, 0); 
 				
@@ -616,10 +621,10 @@ __kernel void searchastar(__global infonode *infonodes,
 				//nlongs[2] = 0; 
 
 				
-				printf("P-updating closed list\n");
+				//printf("P-updating closed list\n");
 				cerrados[nlongs[1]] = actual[0];
 				atomic_inc((__global int*)&nlongs[1]);
-				printf("P-bubblesorting");
+				//printf("P-bubblesorting");
 				bubblesort(abiertos, nlongs[0]); 
 				//printf("P-nabiertos = %ld, ncerrados = %ld\n", nlongs[0], nlongs[1]);
 				//numExpansionesChild++;
@@ -642,15 +647,16 @@ __kernel void searchastar(__global infonode *infonodes,
 			//if(num == 128){
 			while(numExpansionesChild == numExpansiones){
 				//printf("anteriorid: %ld\n", anteriorid);
-				reps++;
-
+				/*reps++;
+				
 				if(reps > 10000){
 					printf("S-EXIT REP\n");
 					break;
 				}
+				*/
 				while(beginToExpand == 1){
 
-					printf("S-ENTER beginToExpand\n");
+					//printf("S-ENTER beginToExpand\n");
 
 					if(!(k > 0 && k < nlongs[2])){
 						k = 0;
@@ -659,7 +665,7 @@ __kernel void searchastar(__global infonode *infonodes,
                     flagNodeToExpand = false;
                     for(j=k; j < nlongs[2]; j++){
                         if(info_threads[j] == 3){
-							printf("S-choose: [%u]\n", j);
+							//printf("S-choose: [%u]\n", j);
 							atomic_xchg(&info_threads[j], num+3);
                             i = j;
                             k = j + 1;
@@ -674,12 +680,12 @@ __kernel void searchastar(__global infonode *infonodes,
                         //printf("S-sucesores[%ld].id=%ld, sucesores[%ld].type=%ld\n", i, sucesores[i].id, i, sucesores[i].type);
 
                         sucesor = sucesores[i]; 
-                        printf("S-ini: %u\n", sucesor.id);
+                        //printf("S-ini: %u\n", sucesor.id);
 
                         if (sucesor.type == idEnd) {
                         
 							atomic_xchg(&info_threads[i], 2);
-                            printf("S-exit-fin: %u\n", sucesor.id);
+                            //printf("S-exit-fin: %u\n", sucesor.id);
                             break;
                         }
 
@@ -687,7 +693,7 @@ __kernel void searchastar(__global infonode *infonodes,
 
                         /*SYNC POINT- We check again if there are more than 1 thread doing this - We do it after heuristics so enough time have passed*/
                         if(info_threads[i] != num + 3){
-                            printf("GOTTAGO\n");
+                            //printf("GOTTAGO\n");
                             continue;
                         }
 
@@ -701,7 +707,7 @@ __kernel void searchastar(__global infonode *infonodes,
                         j = 0;
                         while (j < nlongs[0]) {
                             if (abiertos[j].type == sucesor.type && abiertos[j].f <= sucesor.f) {
-                                printf("S-exit-abiertos: %u\n", sucesor.id);
+                                //printf("S-exit-abiertos: %u\n", sucesor.id);
                                 flagSkip = true;
                                 break;
                             }
@@ -716,7 +722,7 @@ __kernel void searchastar(__global infonode *infonodes,
                         j = 0;
                         while (j < nlongs[1]) {
                             if (cerrados[j].type == sucesor.type && cerrados[j].f <= sucesor.f) {
-                                printf("S-exit-cerrados: %u\n", sucesor.id);
+                                //printf("S-exit-cerrados: %u\n", sucesor.id);
                                 flagSkip = true;
                                 break;
                             }
@@ -730,7 +736,7 @@ __kernel void searchastar(__global infonode *infonodes,
 
                         sucesores[i] = sucesor;
                         atomic_xchg(&info_threads[i], 1);
-                        printf("S-exit-ok: %u\n", sucesor.id);
+                        //printf("S-exit-ok: %u\n", sucesor.id);
                     }
 
                     else{ // if flagNodeToExpand
@@ -768,11 +774,8 @@ __kernel void searchastar(__global infonode *infonodes,
 		//return;
 	}//while principal
 
-	printf("FUCKER %d SALE\n", num);
+	//printf("FUCKER %d SALE\n", num);
 
-	if(num == 0){
-		atomic_and(&out_state[0], 0);
-	}
 	
 	//printf("EXIT-F: %d\n", num);
 
