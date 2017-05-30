@@ -544,13 +544,13 @@ __kernel void searchastar(__global infonode *infonodes,
 			//nlongs[0]--;
 
 			/*Generamos sucesores*/
-			printf("P-Generating list of successors.\n");
+
 			nsucesores = genera_sucesores(sucesores, conexiones, actual[0], nedges, nlongs[3]);
 
 			atomic_xchg((__global int*)&nlongs[2], nsucesores);
 			atomic_add((__global int*)&nlongs[3], nsucesores);
 
-			printf("P-nsucesores: %u\n", nlongs[2]);
+
 
 			/*If no more successors, we go to the next node in the open nodes list.*/
 			if (nlongs[2] == 0) {
@@ -558,13 +558,11 @@ __kernel void searchastar(__global infonode *infonodes,
 				atomic_and(&beginToExpand, 0); 
 			}
 			else{
-				printf("P-updating_infoThreads\n");
+
 				for(i = 0; i < nlongs[2]; i++){
 					info_threads[i] = 3;
 				}
-				printf("P-finished_updating\n");
 
-				printf("P-beginToExpand\n");
 				atomic_xchg(&beginToExpand, 1); 
 				
 
@@ -592,20 +590,14 @@ __kernel void searchastar(__global infonode *infonodes,
 					i++;
 				}
 
-				printf("P-Successors expanded\n");
 				atomic_inc(&numExpansiones);
 				atomic_and(&beginToExpand, 0); 
 				
 				atomic_and((__global int*)&nlongs[2], 0);
 				
 
-			
-
-				
-				printf("P-updating closed list\n");
 				cerrados[nlongs[1]] = actual[0];
 				atomic_inc((__global int*)&nlongs[1]);
-				printf("P-bubblesorting");
 				bubblesort(abiertos, nlongs[0]); 
 
 			} // END IF nlongs[2] == 0
