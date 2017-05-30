@@ -635,11 +635,11 @@ __kernel void searchastar(__global infonode *infonodes,
 
 
                         sucesor = sucesores[i]; 
+                        printf("S-ini: %u\n", sucesor.id);
 
                         if (sucesor.type == idEnd) {
                         
 							atomic_xchg(&info_threads[i], 2);
-                            printf("S-exit-fin: %u\n", sucesor.id);
                             break;
                         }
 
@@ -647,7 +647,6 @@ __kernel void searchastar(__global infonode *infonodes,
 
                         /*SYNC POINT- We check again if there are more than 1 thread doing this - We do it after heuristics so enough time have passed*/
                         if(info_threads[i] != num + 3){
-                            printf("GOTTAGO\n");
                             continue;
                         }
 
@@ -661,7 +660,6 @@ __kernel void searchastar(__global infonode *infonodes,
                         j = 0;
                         while (j < nlongs[0]) {
                             if (abiertos[j].type == sucesor.type && abiertos[j].f <= sucesor.f) {
-                                printf("S-exit-abiertos: %u\n", sucesor.id);
                                 flagSkip = true;
                                 break;
                             }
@@ -676,7 +674,6 @@ __kernel void searchastar(__global infonode *infonodes,
                         j = 0;
                         while (j < nlongs[1]) {
                             if (cerrados[j].type == sucesor.type && cerrados[j].f <= sucesor.f) {
-                                printf("S-exit-cerrados: %u\n", sucesor.id);
                                 flagSkip = true;
                                 break;
                             }
@@ -690,7 +687,6 @@ __kernel void searchastar(__global infonode *infonodes,
 
                         sucesores[i] = sucesor;
                         atomic_xchg(&info_threads[i], 1);
-                        printf("S-exit-ok: %u\n", sucesor.id);
                     }
 
                     else{ // if flagNodeToExpand
