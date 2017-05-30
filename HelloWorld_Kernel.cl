@@ -614,7 +614,6 @@ __kernel void searchastar(__global infonode *infonodes,
 
 				while(beginToExpand == 1){
 
-					printf("S-ENTER beginToExpand\n");
 
 					if(!(k > 0 && k < nlongs[2])){
 						k = 0;
@@ -623,7 +622,6 @@ __kernel void searchastar(__global infonode *infonodes,
                     flagNodeToExpand = false;
                     for(j=k; j < nlongs[2]; j++){
                         if(info_threads[j] == 3){
-							printf("S-choose: [%u]\n", j);
 							atomic_xchg(&info_threads[j], num+3);
                             i = j;
                             k = j + 1;
@@ -637,7 +635,6 @@ __kernel void searchastar(__global infonode *infonodes,
 
 
                         sucesor = sucesores[i]; 
-                        printf("S-ini: %u\n", sucesor.id);
 
                         if (sucesor.type == idEnd) {
                         
