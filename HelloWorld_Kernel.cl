@@ -495,7 +495,6 @@ __kernel void searchastar(__global infonode *infonodes,
 	int numExpansionesChild = 0;
 	int globalReps = 0;
 
-	//printf("Sentrada%d\n", numLocal);
 	//Thread principal
 
 	if(num == 0){
@@ -550,18 +549,13 @@ __kernel void searchastar(__global infonode *infonodes,
 
 			atomic_xchg((__global int*)&nlongs[2], nsucesores);
 			atomic_add((__global int*)&nlongs[3], nsucesores);
-			//nlongs[3] += nlongs[2];
 
 			printf("P-nsucesores: %u\n", nlongs[2]);
 
 			/*If no more successors, we go to the next node in the open nodes list.*/
 			if (nlongs[2] == 0) {
-				//break; // What the fucking heell. 3 month bug.
 				atomic_inc(&numExpansiones);
 				atomic_and(&beginToExpand, 0); 
-				//continue;
-				//numExpansionesChild++;
-				//return;
 			}
 			else{
 				printf("P-updating_infoThreads\n");
@@ -577,10 +571,7 @@ __kernel void searchastar(__global infonode *infonodes,
 				i = 0;
 
 				while (i < nlongs[2]) {
-					//printf("P-i: %ld ", i);
-					//printf("P-wait: %u \n",sucesores[i].id);
 
-					//printf("P-outstate: %d\n", out_state[0]);
 					switch (info_threads[i]) {
 						case 3:
 							continue;
@@ -598,9 +589,7 @@ __kernel void searchastar(__global infonode *infonodes,
 						default:
 							continue;
 					}
-					//info_threads[i] = 3;
 					i++;
-					//printf("P-%ld: %d\n", i, info_threads[i]);
 				}
 
 				printf("P-Successors expanded\n");
@@ -610,8 +599,7 @@ __kernel void searchastar(__global infonode *infonodes,
 				atomic_and((__global int*)&nlongs[2], 0);
 				
 
-				
-				//nlongs[2] = 0; 
+			
 
 				
 				printf("P-updating closed list\n");
@@ -619,27 +607,18 @@ __kernel void searchastar(__global infonode *infonodes,
 				atomic_inc((__global int*)&nlongs[1]);
 				printf("P-bubblesorting");
 				bubblesort(abiertos, nlongs[0]); 
-				//printf("P-nabiertos = %ld, ncerrados = %ld\n", nlongs[0], nlongs[1]);
-				//numExpansionesChild++;
-				//return;
 
 			} // END IF nlongs[2] == 0
 			
-			//printf("P-LLEGA\n");
-			//return;
 		}
 		else{ //Threads para sucesores	
 
-			//printf("S-out_State: %d\n", out_state[0]);
-			//printf("S-%d\n", num);
 			ulong i = 0;
 			ulong j = 0;
 			ulong k = num;
 			bool flagNodeToExpand = false;
 
-			//if(num == 128){
 			while(numExpansionesChild == numExpansiones){
-				//printf("anteriorid: %ld\n", anteriorid);
 
 				while(beginToExpand == 1){
 
@@ -664,7 +643,6 @@ __kernel void searchastar(__global infonode *infonodes,
                     if(flagNodeToExpand){
                     
 
-                        //printf("S-sucesores[%ld].id=%ld, sucesores[%ld].type=%ld\n", i, sucesores[i].id, i, sucesores[i].type);
 
                         sucesor = sucesores[i]; 
                         printf("S-ini: %u\n", sucesor.id);
@@ -737,28 +715,11 @@ __kernel void searchastar(__global infonode *infonodes,
 
 			}//while numExpansionesChild == numExpansiones
 
-			//printf("S-EXIT ITER\n");
-			//}
 			numExpansionesChild++;
+
 		}//end else num
 		
-		/*
-		if(num == 0){
-		printf("P-LLEGA\n");
-			return;
-		}
-		
-		if(num != 128){
-			return;
-		}
-		printf("num: %d\n", num);
-		printf("numExpansiones: %d\n", numExpansiones);
-		printf("numExpansionesChild: %d\n", numExpansionesChild);
-		printf("globalReps: %d\n", globalReps);
-		*/
-	
 
-		//return;
 	}//while principal
 
 
