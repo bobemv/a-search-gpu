@@ -2003,7 +2003,12 @@ cl_ulong* Search_AStar::search_A_star_GPU() {
 	ncerrados = nlongs[1];
 	nsucesores = nlongs[2];
 	indexnodes = nlongs[3];
-
+	if (DEBUG) {
+		cout << "nabiertos: " << nabiertos << endl;
+		cout << "ncerrados: " << ncerrados << endl;
+		cout << "nsucesores: " << nsucesores << endl;
+		cout << "indexnodes: " << indexnodes << endl;
+	}
 	if (ncerrados > 0) {
 		cerrados = (node*)malloc(ncerrados * sizeof(node));
 		if (DEBUG) cout << "Reading the kernel's output (closed nodes list)" << endl;
@@ -2015,6 +2020,11 @@ cl_ulong* Search_AStar::search_A_star_GPU() {
 		}
 	}
 
+	if (DEBUG) {
+		for (int i = 0; i < ncerrados; i++) {
+			cout << "Id: " << cerrados[i].id << ", Type: " << cerrados[i].type << endl;
+		}
+	}
 	/*-------- END GPU ----------*/
 
 	if (DEBUG) cout << "Result: Id(" << output[0].id << "), type(" << output[0].type << ")" << endl;

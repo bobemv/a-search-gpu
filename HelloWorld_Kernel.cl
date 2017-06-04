@@ -494,17 +494,11 @@ __kernel void searchastar(__global infonode *infonodes,
 	__local int numExpansiones;
 	int numExpansionesChild = 0;
 	int globalReps = 0;
+	int option = 0;
 
 	//Thread principal
 
 	if(num == 0){
-		printf("KERNELINFO:\n");
-		printf("groupSize: %d\n", groupSize);
-		printf("globalSize: %d\n", globalSize);
-		printf("localSize: %d\n", localSize);
-		printf("numGroup: %d\n", numGroup);
-		printf("numGlobal: %d\n", numGlobal);
-		printf("num: %d\n", num);
 
 		beginToExpand = 0;
 		numExpansiones = 0;
@@ -520,16 +514,12 @@ __kernel void searchastar(__global infonode *infonodes,
 		}
 	}
 
-	/*SYNC*/
 	barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-	/*END SYNC*/
 
 
 	while(globalReps < max){
 
-		/*SYNC*/
 		barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-		/*END SYNC*/
 
 		if(nlongs[0] == 0 || found){
 			break;
@@ -543,7 +533,6 @@ __kernel void searchastar(__global infonode *infonodes,
 			atomic_dec((__global int*)&nlongs[0]);
 			//nlongs[0]--;
 
-			/*Generamos sucesores*/
 
 			nsucesores = genera_sucesores(sucesores, conexiones, actual[0], nedges, nlongs[3]);
 
@@ -552,7 +541,6 @@ __kernel void searchastar(__global infonode *infonodes,
 
 
 
-			/*If no more successors, we go to the next node in the open nodes list.*/
 			if (nlongs[2] == 0) {
 				atomic_inc(&numExpansiones);
 				atomic_and(&beginToExpand, 0); 
@@ -567,32 +555,33 @@ __kernel void searchastar(__global infonode *infonodes,
 				
 
 				i = 0;
-
+				
 				while (i < nlongs[2]) {
-
-					switch (info_threads[i]) {
-						case 3:
-							continue;
-						case 2:
-							found = true;
-							sucesor = sucesores[i];
-							atomic_and((__global int*)&nlongs[0], 0);
-							break;
-						case 1:
-							abiertos[nlongs[0]] = sucesores[i];
-							atomic_inc((__global int*)&nlongs[0]);
-							break;
-						case 0:
-							break;
-						default:
-							continue;
+					option = info_threads[i];
+					
+					if(option == 2){
+						found = true;
+						sucesor = sucesores[i];
+						atomic_and((__global int*)&nlongs[0], 0);
+						i++;
 					}
-					i++;
+					else if (option == 1){
+						abiertos[nlongs[0]] = sucesores[i];
+						atomic_inc((__global int*)&nlongs[0]);
+						i++;
+					}
+					else if(option == 0){
+						i++;
+					}
+					else{
+						continue;
+					}
+					
 				}
-
+				
 				atomic_inc(&numExpansiones);
 				atomic_and(&beginToExpand, 0); 
-				
+
 				atomic_and((__global int*)&nlongs[2], 0);
 				
 
@@ -609,12 +598,12 @@ __kernel void searchastar(__global infonode *infonodes,
 			ulong j = 0;
 			ulong k = num;
 			bool flagNodeToExpand = false;
-
+			
 			while(numExpansionesChild == numExpansiones){
-
+				
 				while(beginToExpand == 1){
 
-
+				
 					if(!(k > 0 && k < nlongs[2])){
 						k = 0;
 					}
@@ -632,25 +621,20 @@ __kernel void searchastar(__global infonode *infonodes,
 
                     if(flagNodeToExpand){
                     
-
-
                         sucesor = sucesores[i]; 
-                        printf("S-ini: %u\n", sucesor.id);
 
                         if (sucesor.type == idEnd) {
                         
 							atomic_xchg(&info_threads[i], 2);
                             break;
                         }
-
+						
                         sucesor.h = heuristic(infonodes, sucesor.type, idEnd);
 
-                        /*SYNC POINT- We check again if there are more than 1 thread doing this - We do it after heuristics so enough time have passed*/
                         if(info_threads[i] != num + 3){
                             continue;
                         }
 
-                        /* END SYNC POINT */
                         sucesor.g = actual[0].g + search_cost_node_2_node(conexiones, nedges, actual[0].type, sucesor.type);
 
                         sucesor.f = sucesor.g + sucesor.h;
@@ -687,6 +671,7 @@ __kernel void searchastar(__global infonode *infonodes,
 
                         sucesores[i] = sucesor;
                         atomic_xchg(&info_threads[i], 1);
+						
                     }
 
                     else{ // if flagNodeToExpand
@@ -694,24 +679,52 @@ __kernel void searchastar(__global infonode *infonodes,
                         j = 0;
                         k = num;
                     }
-
+					
 
                 }//while beginToExpand
-
+				
 			}//while numExpansionesChild == numExpansiones
 
 			numExpansionesChild++;
-
+			
 		}//end else num
 		
 
 	}//while principal
 
+	
+    if(num == 0){
+        if(max <= globalReps && !found){
 
-	if(num == 0){
-		atomic_and(&out_state[0], 0);
-	}
+                sucesor.id = 0;
+                sucesor.type = 0;
+                sucesor.parent = 0;
+                
+                out_result[0] = sucesor;
+
+                atomic_xchg(&out_state[0], 2);
+
+                nlongs[2] = 0;
+
+        }
+        else{
+
+            if(found){
+
+                out_result[0] = sucesor;
+
+                atomic_xchg(&out_state[0], 1);
+
+                nlongs[2] = 0;
+            }
+            else{
+                atomic_and(&out_state[0], 0);
+
+            }
+        }
+    }
 	
 
 	return;
+
 }

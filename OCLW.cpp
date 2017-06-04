@@ -94,6 +94,10 @@ cl_int OCLW::GPU_program(char *filename) {
 	/*Step 5: Create program object */
 	string sourceStr;
 	cl_int status;
+	char *options = (char*)calloc(100, sizeof(char));
+
+	strcpy(options, "-cl-opt-disable -Werror");
+	//options = NULL;
 
 	status = convertToString(filename, sourceStr);
 	if (status == FAILURE) {
@@ -105,7 +109,7 @@ cl_int OCLW::GPU_program(char *filename) {
 	if (status != CL_SUCCESS) return status;
 
 	/*Step 6: Build program. */
-	status = clBuildProgram(program, 1, devices, NULL, NULL, NULL);
+	status = clBuildProgram(program, 1, devices, options, NULL, NULL);
 	if (status != CL_SUCCESS) {
 		// Determine the size of the log
 		size_t log_size;
