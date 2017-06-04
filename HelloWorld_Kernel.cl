@@ -484,7 +484,7 @@ __kernel void searchastar(__global infonode *infonodes,
 	ulong i, j, k;
 
 	node inicial;
-	bool found = false;
+	__local bool found;
 	bool flagSkip = false;
 	node sucesor;
 	int max = 20;
@@ -495,13 +495,14 @@ __kernel void searchastar(__global infonode *infonodes,
 	int numExpansionesChild = 0;
 	int globalReps = 0;
 	int option = 0;
-
+	int numnodes = 0;
+	
 	//Thread principal
 
 	if(num == 0){
-
 		beginToExpand = 0;
 		numExpansiones = 0;
+		found = false;
 
 		if(nlongs[0] == 0){
 			inicial.type = idStart;
@@ -525,179 +526,140 @@ __kernel void searchastar(__global infonode *infonodes,
 			break;
 		}
 
-		globalReps++;
-
 		if(num == 0){
 			actual[0] = abiertos[nlongs[0]-1];
+			nlongs[0]--;
 
-			atomic_dec((__global int*)&nlongs[0]);
-			//nlongs[0]--;
+			nlongs[2] = genera_sucesores(sucesores, conexiones, actual[0], nedges, nlongs[3]);
 
+			nlongs[3] += nlongs[2];
 
-			nsucesores = genera_sucesores(sucesores, conexiones, actual[0], nedges, nlongs[3]);
-
-			atomic_xchg((__global int*)&nlongs[2], nsucesores);
-			atomic_add((__global int*)&nlongs[3], nsucesores);
-
-
-
-			if (nlongs[2] == 0) {
-				atomic_inc(&numExpansiones);
-				atomic_and(&beginToExpand, 0); 
-			}
-			else{
-
+			if (nlongs[2] != 0) {
 				for(i = 0; i < nlongs[2]; i++){
 					info_threads[i] = 3;
 				}
-
-				atomic_xchg(&beginToExpand, 1); 
-				
-
-				i = 0;
-				//reps = 0;
-				while (i < nlongs[2]) {
-					option = info_threads[i];
-					
-					if(option == 2){
-						found = true;
-						sucesor = sucesores[i];
-						atomic_and((__global int*)&nlongs[0], 0);
-						//reps = 0;
-						i++;
-					}
-					else if (option == 1){
-						abiertos[nlongs[0]] = sucesores[i];
-						atomic_inc((__global int*)&nlongs[0]);
-						//reps = 0;
-						i++;
-					}
-					else if(option == 0){
-						//reps = 0;
-						i++;
-					}
-					else{
-						//reps++;
-						continue;
-					}
-				}
-
-				/*
-				if(reps == 100000){
-					printf("P-Algunos nodos no fueron expandidos\n");
-					atomic_and((__global int*)&nlongs[0], 0);
-				}*/
-				
-				atomic_inc(&numExpansiones);
-				atomic_and(&beginToExpand, 0); 
-
-				atomic_and((__global int*)&nlongs[2], 0);
-				
-
-				cerrados[nlongs[1]] = actual[0];
-				atomic_inc((__global int*)&nlongs[1]);
-				bubblesort(abiertos, nlongs[0]); 
-
-			} // END IF nlongs[2] == 0
+			}
 			
 		}
-		else{ //Threads para sucesores	
 
-			ulong i = 0;
-			ulong j = 0;
-			ulong k = num;
-			bool flagNodeToExpand = false;
+		barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+
+		globalReps++;
+		
+		if(nlongs[2] == 0){
+
+			continue;
+		}
+
+
+		if(num != 0){ //Threads para sucesores	
+
+			i = 0;
+			j = 0;
+			k = 0;
+			numnodes = 0;
+
+			nsucesores = nlongs[2];
+
+			numnodes = (int) (nsucesores/(localSize-1));
+
+			if((nsucesores % (localSize-1)) >= num){
+				numnodes++;
+			}
 			
-			while(numExpansionesChild == numExpansiones){
-				reps = 0;
-				while(beginToExpand == 1){
+
+			for(k=0; k<numnodes; k++){
+
+
+				i = (num-1) + (localSize-1)*k;
+                sucesor = sucesores[i]; 
+
+                if (sucesor.type == idEnd) {
+                
+                	info_threads[i]=2;
+                    continue;
+                }
 				
-					if(reps > 1){ // I dont know why but it is needed to make the algorithm works with dense graphs
-						break;
-					}
-					if(!(k > 0 && k < nlongs[2])){
-						k = 0;
-					}
-					
-                    flagNodeToExpand = false;
-                    for(j=k; j < nlongs[2]; j++){
-                        if(info_threads[j] == 3){
-							atomic_xchg(&info_threads[j], num+3);
-                            i = j;
-                            k = j + 1;
-                            flagNodeToExpand = true;
-                            break;
-                        }
+                sucesor.h = heuristic(infonodes, sucesor.type, idEnd);
+
+                sucesor.g = actual[0].g + search_cost_node_2_node(conexiones, nedges, actual[0].type, sucesor.type);
+
+                sucesor.f = sucesor.g + sucesor.h;
+
+
+                flagSkip = false;
+                j = 0;
+                while (j < nlongs[0]) {
+                    if (abiertos[j].type == sucesor.type && abiertos[j].f <= sucesor.f) {
+                        flagSkip = true;
+                        break;
                     }
+                    j++;
+                }
 
-                    if(flagNodeToExpand){
-                    
-                        sucesor = sucesores[i]; 
+                if(flagSkip){
+                    info_threads[i]=0;
+                    continue;
+                }
 
-                        if (sucesor.type == idEnd) {
-                        
-							atomic_xchg(&info_threads[i], 2);
-                            break;
-                        }
-						
-                        sucesor.h = heuristic(infonodes, sucesor.type, idEnd);
-
-                        if(info_threads[i] != num + 3){
-                            continue;
-                        }
-
-                        sucesor.g = actual[0].g + search_cost_node_2_node(conexiones, nedges, actual[0].type, sucesor.type);
-
-                        sucesor.f = sucesor.g + sucesor.h;
-
-
-                        bool flagSkip = false;
-                        j = 0;
-                        while (j < nlongs[0]) {
-                            if (abiertos[j].type == sucesor.type && abiertos[j].f <= sucesor.f) {
-                                flagSkip = true;
-                                break;
-                            }
-                            j++;
-                        }
-
-                        if(flagSkip){
-                            atomic_and(&info_threads[i], 0);
-                            continue;
-                        }
-
-                        j = 0;
-                        while (j < nlongs[1]) {
-                            if (cerrados[j].type == sucesor.type && cerrados[j].f <= sucesor.f) {
-                                flagSkip = true;
-                                break;
-                            }
-                            j++;
-                        }
-
-                        if(flagSkip){
-                            atomic_and(&info_threads[i], 0);
-                            continue;
-                        }
-
-                        sucesores[i] = sucesor;
-                        atomic_xchg(&info_threads[i], 1);
-						
+                j = 0;
+                while (j < nlongs[1]) {
+                    if (cerrados[j].type == sucesor.type && cerrados[j].f <= sucesor.f) {
+                        flagSkip = true;
+                        break;
                     }
+                    j++;
+                }
 
-                    else{ // if flagNodeToExpand
-                        i = 0;
-                        j = 0;
-                        k = num;
-						reps++;
-                    }
-					
+                if(flagSkip){
+                    info_threads[i]=0;
+                    continue;
+                }
 
-                }//while beginToExpand
+                sucesores[i] = sucesor;
+                info_threads[i]=1;
+
+			}
+
+		}//end if num != 0
+
+		barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+
+		if(num == 0){
+
+			i = 0;
+			while (i < nlongs[2]) {
+				option = info_threads[i];
 				
-			}//while numExpansionesChild == numExpansiones
-			numExpansionesChild++;
-		}//end else num
+				if(option == 2){
+					found = true;
+					sucesor = sucesores[i];
+					nlongs[0]=0;
+					i++;
+				}
+				else if (option == 1){
+					abiertos[nlongs[0]] = sucesores[i];
+					nlongs[0]++;
+					i++;
+				}
+				else if(option == 0){
+					i++;
+				}
+				else{
+					printf("P-WTF...\n");
+					i++;
+				}
+			}
+
+			
+
+			cerrados[nlongs[1]] = actual[0];
+			nlongs[1]++;
+			bubblesort(abiertos, nlongs[0]); 
+
+			
+		}
+
 		
 
 	}//while principal
@@ -711,8 +673,7 @@ __kernel void searchastar(__global infonode *infonodes,
                 sucesor.parent = 0;
                 
                 out_result[0] = sucesor;
-
-                atomic_xchg(&out_state[0], 2);
+                out_state[0] = 2;
 
                 nlongs[2] = 0;
 
@@ -723,12 +684,12 @@ __kernel void searchastar(__global infonode *infonodes,
 
                 out_result[0] = sucesor;
 
-                atomic_xchg(&out_state[0], 1);
+                out_state[0] = 1;
 
                 nlongs[2] = 0;
             }
             else{
-                atomic_and(&out_state[0], 0);
+                out_state[0] = 0;
 
             }
         }

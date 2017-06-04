@@ -96,8 +96,8 @@ cl_int OCLW::GPU_program(char *filename) {
 	cl_int status;
 	char *options = (char*)calloc(100, sizeof(char));
 
-	strcpy(options, "-cl-opt-disable -Werror");
-	//options = NULL;
+	//strcpy(options, "-cl-opt-disable -Werror");
+	options = NULL;
 
 	status = convertToString(filename, sourceStr);
 	if (status == FAILURE) {
