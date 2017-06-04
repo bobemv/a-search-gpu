@@ -1762,7 +1762,7 @@ cl_ulong* Search_AStar::search_A_star_GPU() {
 		return NULL;
 	}
 
-	cout << "BUilding program " << endl;
+	if (DEBUG) cout << "Building program " << endl;
 	status = opencl.GPU_program(filename);
 	if (status != CL_SUCCESS) {
 		if (DEBUG) opencl.debug_GPU_errors(status);
@@ -1770,7 +1770,7 @@ cl_ulong* Search_AStar::search_A_star_GPU() {
 		return NULL;
 	}
 
-	cout << "Creating our kernel" << endl;
+	if (DEBUG) cout << "Creating our kernel" << endl;
 	status = opencl.GPU_kernel(fun);
 	if (status != CL_SUCCESS) {
 		if (DEBUG) opencl.debug_GPU_errors(status);

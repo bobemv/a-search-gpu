@@ -15,7 +15,7 @@
 
 #define SUCCESS 0
 #define FAILURE 1
-#define DEBUG true
+#define DEBUG false
 #define TOFILE false
 
 using namespace std;

@@ -4,17 +4,17 @@ int main(int argc, char* argv[]) {
 
 	Tests tests;
 
-	tests.standard_single(20, 0.5, true);
+	//tests.standard_single(200, 0.8, true);
 	//tests.grid_single(50, 0.65, false);
 
-	/*
+	
 	cl_ulong nnodosarray[] = {50, 100, 200, 400};
 	int numElems = sizeof(nnodosarray) / sizeof(cl_ulong);
 
 	for (int i = 0; i < numElems; i++) {
 		cout << i << endl;
 		tests.standard_sparsefactor(nnodosarray[i], 1, true);
-	}*/
+	}
 
 	/*
 	cl_ulong nnodosarray[] = { 10, 20, 40, 100, 200, 400};

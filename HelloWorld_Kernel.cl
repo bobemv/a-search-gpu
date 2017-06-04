@@ -555,7 +555,7 @@ __kernel void searchastar(__global infonode *infonodes,
 				
 
 				i = 0;
-				
+				//reps = 0;
 				while (i < nlongs[2]) {
 					option = info_threads[i];
 					
@@ -563,21 +563,30 @@ __kernel void searchastar(__global infonode *infonodes,
 						found = true;
 						sucesor = sucesores[i];
 						atomic_and((__global int*)&nlongs[0], 0);
+						//reps = 0;
 						i++;
 					}
 					else if (option == 1){
 						abiertos[nlongs[0]] = sucesores[i];
 						atomic_inc((__global int*)&nlongs[0]);
+						//reps = 0;
 						i++;
 					}
 					else if(option == 0){
+						//reps = 0;
 						i++;
 					}
 					else{
+						//reps++;
 						continue;
 					}
-					
 				}
+
+				/*
+				if(reps == 100000){
+					printf("P-Algunos nodos no fueron expandidos\n");
+					atomic_and((__global int*)&nlongs[0], 0);
+				}*/
 				
 				atomic_inc(&numExpansiones);
 				atomic_and(&beginToExpand, 0); 
@@ -600,10 +609,12 @@ __kernel void searchastar(__global infonode *infonodes,
 			bool flagNodeToExpand = false;
 			
 			while(numExpansionesChild == numExpansiones){
-				
+				reps = 0;
 				while(beginToExpand == 1){
-
 				
+					if(reps > 1){ // I dont know why but it is needed to make the algorithm works with dense graphs
+						break;
+					}
 					if(!(k > 0 && k < nlongs[2])){
 						k = 0;
 					}
@@ -678,15 +689,14 @@ __kernel void searchastar(__global infonode *infonodes,
                         i = 0;
                         j = 0;
                         k = num;
+						reps++;
                     }
 					
 
                 }//while beginToExpand
 				
 			}//while numExpansionesChild == numExpansiones
-
 			numExpansionesChild++;
-			
 		}//end else num
 		
 
