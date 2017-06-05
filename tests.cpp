@@ -122,14 +122,14 @@ int Tests::standard_sparsefactor(cl_ulong nnodos, int reps, bool debug)
 			(*clSearch).random_start_end();
 		}
 
-		if (debug) cout << "Writing file " << endl;
-		if (debug) cout << "Medians " << endl;
+		//if (debug) cout << "Writing file " << endl;
+		//if (debug) cout << "Medians " << endl;
 		myfile << to_string(median(tCPU, reps)) + " ";
 		myfile << to_string(median(tGPU, reps)) + " ";
-		if (debug) cout << "Averages " << endl;
+		//if (debug) cout << "Averages " << endl;
 		myfile << to_string(average(tCPU, reps)) + " ";
 		myfile << to_string(average(tGPU, reps)) + "\n";
-		if (debug) cout << "Finished Writing file " << endl;
+		//if (debug) cout << "Finished Writing file " << endl;
 		
 		free(tCPU);
 		tCPU = NULL;

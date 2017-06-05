@@ -84,7 +84,7 @@ cl_int OCLW::GPU_setup() {
 	if (status != CL_SUCCESS) return status;
 
 	/*Step 4: Creating command queue associate with the context.*/
-	commandQueue = clCreateCommandQueueWithProperties(context, devices[0], NULL, &status);
+	commandQueue = clCreateCommandQueue(context, devices[0], CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &status);
 	if (status != CL_SUCCESS) return status;
 
 	return CL_SUCCESS;
@@ -434,9 +434,9 @@ cl_int OCLW::GPU_work_sizes_optimal(cl_ulong threadsWanted) {
 	if (status != CL_SUCCESS) return status;
 	
 	
-	cout << "maxComputeUnits: " << maxComputeUnits << endl;
-	cout << "maxWorkGroupSize: " << maxWorkGroupSize << endl;
-	cout << "CL_KERNEL_WORK_GROUP_SIZE: " << localWorkSize[0] << endl;
+	//cout << "maxComputeUnits: " << maxComputeUnits << endl;
+	//cout << "maxWorkGroupSize: " << maxWorkGroupSize << endl;
+	//cout << "CL_KERNEL_WORK_GROUP_SIZE: " << localWorkSize[0] << endl;
 	globalWorkSize[0] = ((threadsWanted/localWorkSize[0])+1)*localWorkSize[0];
 	
 
@@ -561,6 +561,23 @@ cl_int OCLW::GPU_run() {
 
 	return CL_SUCCESS;
 }
+
+cl_int OCLW::GPU_run_several(int numInstances) {
+	cl_int status;
+	int i;
+
+	for (i = 0; i < numInstances; i++) {
+		status = clEnqueueNDRangeKernel(commandQueue, kernel, workDim, NULL, globalWorkSize, localWorkSize, 0, NULL, NULL);
+		if (status != CL_SUCCESS) return status;
+	}
+	
+	/*We wait for it to finish*/
+	status = clFinish(commandQueue);
+	if (status != CL_SUCCESS) return status;
+
+	return CL_SUCCESS;
+}
+
 
 cl_int OCLW::GPU_buffer_read_host(cl_uint numBuffer, size_t sizeToRead, void *ptr) {
 	cl_int status;

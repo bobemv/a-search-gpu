@@ -65,6 +65,7 @@ public:
 	cl_int GPU_work_sizes_optimal_allcores(cl_ulong threadsWanted);
 	cl_int GPU_work_sizes_optimal_onecore();
 	cl_int GPU_run();
+	cl_int GPU_run_several(int numInstances);
 	cl_int GPU_buffer_read_host(cl_uint numBuffer, size_t sizeToRead, void *ptr);
 	cl_int GPU_clear_kernel();
 	cl_int GPU_clear();

@@ -389,7 +389,7 @@ cl_ulong* Search_AStar::get_path_A_star(node result) {
 	/*First we get all nodes which form the path*/
 	while (result.parent != 0) {
 		i++;
-
+		//cout << "atascado" << endl;
 		mem_aux = (cl_ulong*)realloc(inversed, i * sizeof(cl_ulong));
 		if (mem_aux == NULL) {
 			return NULL;
@@ -1731,7 +1731,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside() {
 	return path;
 
 }
-cl_ulong* Search_AStar::search_A_star_GPU() {
+cl_ulong* Search_AStar::search_A_star_GPU_inside_parallel() {
 	node* mem_aux = NULL;
 	cl_ulong* path;
 	ncerrados = nnodos;
@@ -2051,7 +2051,272 @@ cl_ulong* Search_AStar::search_A_star_GPU() {
 
 }
 
+cl_ulong* Search_AStar::search_A_star_GPU() {
+	node* mem_aux = NULL;
+	cl_ulong* path;
+	cl_int numInstances = 10000;
+	ncerrados = nnodos * numInstances;
+	nabiertos = nnodos * numInstances;
+	/*-------- GPU ----------*/
+	/*Extra variables necessary because of our GPU kernel*/
+	cl_int status;
+	size_t sizeAux;
+	OCLW opencl;
+	node *output = NULL;
+	cl_ulong *nlongs = NULL;
+	cl_int *output_state = NULL;
 
+	int num_nlongs = 3 * numInstances;
+
+	nlongs = (cl_ulong*)malloc(num_nlongs * sizeof(cl_ulong));
+	output = (node*)malloc(numInstances * sizeof(node));
+	output_state = (cl_int*)malloc(numInstances * sizeof(cl_int));
+
+	/*Creating context, command queue and program for our kernel*/
+	status = opencl.GPU_setup();
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	status = opencl.GPU_program(filename);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Creating our kernel" << endl;
+	status = opencl.GPU_kernel(fun);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	/*Creating necessary immutable buffers and arguments*/
+	if (DEBUG) cout << "Creating necessary buffers and immutable arguments" << endl;
+
+	if (DEBUG) cout << "Buffer I: infonodes" << endl;
+	status = opencl.GPU_buffer_input(nnodos * sizeof(infonode), infonodes);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Buffer I: conexiones" << endl;
+	status = opencl.GPU_buffer_input(nedges * sizeof(edge), conexiones);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Buffer I/O: abiertos" << endl;
+	status = opencl.GPU_buffer_input_output_empty(10 * nabiertos * sizeof(node));
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Buffer I/O: cerrados" << endl;
+	status = opencl.GPU_buffer_input_output_empty(ncerrados * sizeof(node));
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Buffer I/O: sucesores" << endl;
+	status = opencl.GPU_buffer_input_output_empty((nnodos - 1) * numInstances * sizeof(node));
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+
+	for (int i = 0; i < num_nlongs; i+=3) {
+		nlongs[i] = 0;
+		nlongs[i+1] = 0;
+		nlongs[i+2] = 0;
+	}
+
+	if (DEBUG) cout << "Buffer I/O: nlongs (cl_ulong)" << endl;
+	status = opencl.GPU_buffer_input_output(num_nlongs * sizeof(cl_ulong), nlongs);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+
+	if (DEBUG) cout << "Buffer O: output (node)" << endl;
+	status = opencl.GPU_buffer_output(numInstances * sizeof(node));
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Buffer O: output_state (cl_int)" << endl;
+	status = opencl.GPU_buffer_output(numInstances * sizeof(cl_int));
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Argument: buffers" << endl;
+	status = opencl.GPU_argument_buffers();
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+
+	if (DEBUG) cout << "Argument: nnodos" << endl;
+	status = opencl.GPU_argument(sizeof(nnodos), (void*)&nnodos, 8);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Argument: nedges" << endl;
+	status = opencl.GPU_argument(sizeof(nedges), (void*)&nedges, 9);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Argument: idStart" << endl;
+	status = opencl.GPU_argument(sizeof(fin), (void*)&ini, 10);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+	}
+
+	if (DEBUG) cout << "Argument: idEnd" << endl;
+	status = opencl.GPU_argument(sizeof(fin), (void*)&fin, 11);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Argument: numInstances" << endl;
+	status = opencl.GPU_argument(sizeof(numInstances), (void*)&numInstances, 12);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Computing optimal work sizes" << endl;
+	status = opencl.GPU_work_sizes_optimal(numInstances);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	/*Executing kernel*/
+	if (DEBUG) cout << "Executing kernel" << endl;
+	status = opencl.GPU_run();
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+
+	/*IMPORTANT: We assume all kernel instances return the same results. We'll only check their final results*/
+	if (DEBUG) cout << "Reading the kernel's output state (int=> 2=not finished, 1=found, 0=not found)" << endl;
+	status = opencl.GPU_buffer_read_host(7, numInstances * sizeof(cl_int), output_state);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+
+	while (output_state[0] == 2) {
+
+		/*Executing kernel*/
+		if (DEBUG) cout << "Executing kernel" << endl;
+		status = opencl.GPU_run();
+		if (status != CL_SUCCESS) {
+			if (DEBUG) opencl.debug_GPU_errors(status);
+			/*TODO free memory*/
+			return NULL;
+		}
+
+		if (DEBUG) cout << "Reading the kernel's output state (int=> 2=not finished, 1=found, 0=not found)" << endl;
+		status = opencl.GPU_buffer_read_host(7, numInstances * sizeof(cl_int), output_state);
+		if (status != CL_SUCCESS) {
+			if (DEBUG) opencl.debug_GPU_errors(status);
+			/*TODO free memory*/
+			return NULL;
+		}
+
+
+
+	}
+
+	if (DEBUG) cout << "Reading the kernel's output result (node)" << endl;
+	status = opencl.GPU_buffer_read_host(6, numInstances * sizeof(node), output);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	cerrados = (node*)malloc(ncerrados * sizeof(node));
+	if (DEBUG) cout << "Reading the kernel's output (closed nodes list)" << endl;
+	status = opencl.GPU_buffer_read_host(3, ncerrados * sizeof(node), cerrados);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+	ncerrados = nnodos;
+
+	/*for (int i = 0; i < nnodos; i++) {
+		cout << "cerrados["<< i <<"]: Id(" << cerrados[i].id << "), type(" << cerrados[i].type << ")" << endl;
+	}*/
+	/*-------- END GPU ----------*/
+	/*
+	for (int i = 0; i < numInstances; i++) {
+		cout << "Result Instance "<< i <<": Id(" << output[i].id << "), type(" << output[i].type << ")" << endl;
+	}*/
+	
+	if (output_state[0]) {
+		if (DEBUG) cout << "Retrieving the generated path." << endl;
+		path = get_path_A_star(output[0]);
+	}
+	else {
+		path = NULL;
+	}
+
+	/*Free memory*/
+	free(output);
+	free(nlongs);
+	free(output_state);
+
+	if (DEBUG) cout << "Clearing GPU resources." << endl;
+	opencl.GPU_clear();
+
+
+	if (DEBUG) cout << "Exiting function." << endl;
+	return path;
+
+}
 
 /*----- HEURISTICS ------- */
 void Search_AStar::infonodes_random(cl_uint maxdistance) {
