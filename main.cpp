@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
 	//tests.grid_single(50, 0.65, false);
 
 	
-	cl_ulong nnodosarray[] = {200};
+	cl_ulong nnodosarray[] = {500};
 	int numElems = sizeof(nnodosarray) / sizeof(cl_ulong);
 
 	for (int i = 0; i < numElems; i++) {

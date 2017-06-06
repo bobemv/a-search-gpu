@@ -605,7 +605,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_v1() {
 		/*TODO free memory*/
 		return NULL;
 	}
-	status = opencl.GPU_program(filename);
+	status = opencl.GPU_program("Kernel_v1.cl");
 	if (status != CL_SUCCESS) {
 		if (DEBUG) opencl.debug_GPU_errors(status);
 		/*TODO free memory*/
@@ -849,7 +849,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_v2() {
 		/*TODO free memory*/
 		return NULL;
 	}
-	status = opencl.GPU_program(filename);
+	status = opencl.GPU_program("Kernel_v2.cl");
 	if (status != CL_SUCCESS) {
 		if (DEBUG) opencl.debug_GPU_errors(status);
 		/*TODO free memory*/
@@ -1129,7 +1129,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_v3() {
 		/*TODO free memory*/
 		return NULL;
 	}
-	status = opencl.GPU_program(filename);
+	status = opencl.GPU_program("Kernel_v3.cl");
 	if (status != CL_SUCCESS) {
 		if (DEBUG) opencl.debug_GPU_errors(status);
 		/*TODO free memory*/
@@ -1164,7 +1164,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_v3() {
 	}
 
 	if (DEBUG) cout << "Buffer I: abiertos" << endl;
-	status = opencl.GPU_buffer_input_empty(nnodos * sizeof(node)); /*TODO shitty and it is going to be a problem in a matter of secs*/
+	status = opencl.GPU_buffer_input_empty(10* nnodos * sizeof(node)); /*TODO shitty and it is going to be a problem in a matter of secs*/
 	if (status != CL_SUCCESS) {
 		if (DEBUG) opencl.debug_GPU_errors(status);
 		/*TODO free memory*/
@@ -1440,11 +1440,13 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside() {
 	size_t sizeAux;
 	OCLW opencl;
 	node *output = NULL;
-	cl_ulong *output_longs = NULL;
+	cl_ulong *nlongs = NULL;
 	cl_int *output_state = NULL;
 
+	int num_nlongs = 3;
+
+	nlongs = (cl_ulong*)malloc(num_nlongs * sizeof(cl_ulong));
 	output = (node*)malloc(sizeof(node));
-	output_longs = (cl_ulong*)malloc(3 * sizeof(cl_ulong));
 	output_state = (cl_int*)malloc(sizeof(cl_int));
 
 	/*Creating context, command queue and program for our kernel*/
@@ -1455,7 +1457,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside() {
 		return NULL;
 	}
 
-	status = opencl.GPU_program(filename);
+	status = opencl.GPU_program("Kernel_Inside.cl");
 	if (status != CL_SUCCESS) {
 		if (DEBUG) opencl.debug_GPU_errors(status);
 		/*TODO free memory*/
@@ -1490,7 +1492,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside() {
 	}
 
 	if (DEBUG) cout << "Buffer I/O: abiertos" << endl;
-	status = opencl.GPU_buffer_input_output_empty(nabiertos * nnodos * sizeof(node));
+	status = opencl.GPU_buffer_input_output_empty(10 * nabiertos * sizeof(node));
 	if (status != CL_SUCCESS) {
 		if (DEBUG) opencl.debug_GPU_errors(status);
 		/*TODO free memory*/
@@ -1513,16 +1515,23 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside() {
 		return NULL;
 	}
 
-	if (DEBUG) cout << "Buffer O: output (node)" << endl;
-	status = opencl.GPU_buffer_output(sizeof(node));
+
+	nlongs[0] = 0;
+	nlongs[1] = 0;
+	nlongs[2] = 0;
+	
+
+	if (DEBUG) cout << "Buffer I/O: nlongs (cl_ulong)" << endl;
+	status = opencl.GPU_buffer_input_output(num_nlongs * sizeof(cl_ulong), nlongs);
 	if (status != CL_SUCCESS) {
 		if (DEBUG) opencl.debug_GPU_errors(status);
 		/*TODO free memory*/
 		return NULL;
 	}
 
-	if (DEBUG) cout << "Buffer O: output_longs (cl_ulong)" << endl;
-	status = opencl.GPU_buffer_output(3*sizeof(cl_ulong));
+
+	if (DEBUG) cout << "Buffer O: output (node)" << endl;
+	status = opencl.GPU_buffer_output( sizeof(node));
 	if (status != CL_SUCCESS) {
 		if (DEBUG) opencl.debug_GPU_errors(status);
 		/*TODO free memory*/
@@ -1577,31 +1586,6 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside() {
 		return NULL;
 	}
 
-	nabiertos = 0;
-	if (DEBUG) cout << "Argument: nabiertos" << endl;
-	status = opencl.GPU_argument(sizeof(nabiertos), (void*)&nabiertos, 12);
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
-	ncerrados = 0;
-	if (DEBUG) cout << "Argument: ncerrados" << endl;
-	status = opencl.GPU_argument(sizeof(ncerrados), (void*)&ncerrados, 13);
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
-	indexnodes = 0;
-	if (DEBUG) cout << "Argument: indexnodes" << endl;
-	status = opencl.GPU_argument(sizeof(indexnodes), (void*)&indexnodes, 14);
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
-
 	if (DEBUG) cout << "Computing optimal work sizes" << endl;
 	status = opencl.GPU_work_sizes_optimal(1);
 	if (status != CL_SUCCESS) {
@@ -1619,6 +1603,8 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside() {
 		return NULL;
 	}
 
+
+	/*IMPORTANT: We assume all kernel instances return the same results. We'll only check their final results*/
 	if (DEBUG) cout << "Reading the kernel's output state (int=> 2=not finished, 1=found, 0=not found)" << endl;
 	status = opencl.GPU_buffer_read_host(7, sizeof(cl_int), output_state);
 	if (status != CL_SUCCESS) {
@@ -1629,44 +1615,6 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside() {
 
 
 	while (output_state[0] == 2) {
-
-		if (DEBUG) cout << "Reading the kernel's output longs (3 cl_ulongs)" << endl;
-		status = opencl.GPU_buffer_read_host(6, 3*sizeof(cl_ulong), output_longs);
-		if (status != CL_SUCCESS) {
-			if (DEBUG) opencl.debug_GPU_errors(status);
-			/*TODO free memory*/
-			return NULL;
-		}
-
-
-		nabiertos = output_longs[0];
-		if (DEBUG) cout << "Argument: nabiertos" << endl;
-		status = opencl.GPU_argument(sizeof(nabiertos), (void*)&nabiertos, 12);
-		if (status != CL_SUCCESS) {
-			if (DEBUG) opencl.debug_GPU_errors(status);
-			/*TODO free memory*/
-			return NULL;
-		}
-
-
-		ncerrados = output_longs[1];
-		if (DEBUG) cout << "Argument: ncerrados" << endl;
-		status = opencl.GPU_argument(sizeof(ncerrados), (void*)&ncerrados, 13);
-		if (status != CL_SUCCESS) {
-			if (DEBUG) opencl.debug_GPU_errors(status);
-			/*TODO free memory*/
-			return NULL;
-		}
-
-
-		indexnodes = output_longs[2];
-		if (DEBUG) cout << "Argument: indexnodes" << endl;
-		status = opencl.GPU_argument(sizeof(indexnodes), (void*)&indexnodes, 14);
-		if (status != CL_SUCCESS) {
-			if (DEBUG) opencl.debug_GPU_errors(status);
-			/*TODO free memory*/
-			return NULL;
-		}
 
 		/*Executing kernel*/
 		if (DEBUG) cout << "Executing kernel" << endl;
@@ -1690,7 +1638,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside() {
 	}
 
 	if (DEBUG) cout << "Reading the kernel's output result (node)" << endl;
-	status = opencl.GPU_buffer_read_host(5, sizeof(node), output);
+	status = opencl.GPU_buffer_read_host(6, sizeof(node), output);
 	if (status != CL_SUCCESS) {
 		if (DEBUG) opencl.debug_GPU_errors(status);
 		/*TODO free memory*/
@@ -1707,9 +1655,6 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside() {
 		return NULL;
 	}
 
-	/*-------- END GPU ----------*/
-
-	if (DEBUG) cout << "Result: Id(" << output[0].id << "), type(" << output[0].type << ")" << endl;
 	if (output_state[0]) {
 		if (DEBUG) cout << "Retrieving the generated path." << endl;
 		path = get_path_A_star(output[0]);
@@ -1720,7 +1665,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside() {
 
 	/*Free memory*/
 	free(output);
-	free(output_longs);
+	free(nlongs);
 	free(output_state);
 
 	if (DEBUG) cout << "Clearing GPU resources." << endl;
@@ -1763,7 +1708,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside_parallel() {
 	}
 
 	if (DEBUG) cout << "Building program " << endl;
-	status = opencl.GPU_program(filename);
+	status = opencl.GPU_program("Kernel_Inside_Parallel.cl");
 	if (status != CL_SUCCESS) {
 		if (DEBUG) opencl.debug_GPU_errors(status);
 		/*TODO free memory*/
@@ -1798,7 +1743,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside_parallel() {
 	}
 
 	if (DEBUG) cout << "Buffer I/O: abiertos" << endl;
-	status = opencl.GPU_buffer_input_output_empty(nabiertos * nnodos * sizeof(node));
+	status = opencl.GPU_buffer_input_output_empty(10* nabiertos * sizeof(node));
 	if (status != CL_SUCCESS) {
 		if (DEBUG) opencl.debug_GPU_errors(status);
 		/*TODO free memory*/
@@ -2051,10 +1996,9 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside_parallel() {
 
 }
 
-cl_ulong* Search_AStar::search_A_star_GPU() {
+cl_ulong* Search_AStar::search_A_star_GPU_inside_instances(cl_int numInstances) {
 	node* mem_aux = NULL;
 	cl_ulong* path;
-	cl_int numInstances = 10000;
 	ncerrados = nnodos * numInstances;
 	nabiertos = nnodos * numInstances;
 	/*-------- GPU ----------*/
@@ -2080,7 +2024,7 @@ cl_ulong* Search_AStar::search_A_star_GPU() {
 		return NULL;
 	}
 
-	status = opencl.GPU_program(filename);
+	status = opencl.GPU_program("Kernel_Inside_Instances.cl");
 	if (status != CL_SUCCESS) {
 		if (DEBUG) opencl.debug_GPU_errors(status);
 		/*TODO free memory*/
@@ -2318,6 +2262,273 @@ cl_ulong* Search_AStar::search_A_star_GPU() {
 
 }
 
+cl_ulong* Search_AStar::search_A_star_CPU_inside_instances(cl_int numInstances) {
+	node* mem_aux = NULL;
+	cl_ulong* path;
+	ncerrados = nnodos * numInstances;
+	nabiertos = nnodos * numInstances;
+	/*-------- GPU ----------*/
+	/*Extra variables necessary because of our GPU kernel*/
+	cl_int status;
+	size_t sizeAux;
+	OCLW opencl;
+	node *output = NULL;
+	cl_ulong *nlongs = NULL;
+	cl_int *output_state = NULL;
+
+	int num_nlongs = 3 * numInstances;
+
+	nlongs = (cl_ulong*)malloc(num_nlongs * sizeof(cl_ulong));
+	output = (node*)malloc(numInstances * sizeof(node));
+	output_state = (cl_int*)malloc(numInstances * sizeof(cl_int));
+
+	opencl.GPU_set_device_type(OCLW::CPU);
+
+	/*Creating context, command queue and program for our kernel*/
+	status = opencl.GPU_setup();
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	status = opencl.GPU_program("Kernel_Inside_Instances.cl");
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Creating our kernel" << endl;
+	status = opencl.GPU_kernel(fun);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	/*Creating necessary immutable buffers and arguments*/
+	if (DEBUG) cout << "Creating necessary buffers and immutable arguments" << endl;
+
+	if (DEBUG) cout << "Buffer I: infonodes" << endl;
+	status = opencl.GPU_buffer_input(nnodos * sizeof(infonode), infonodes);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Buffer I: conexiones" << endl;
+	status = opencl.GPU_buffer_input(nedges * sizeof(edge), conexiones);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Buffer I/O: abiertos" << endl;
+	status = opencl.GPU_buffer_input_output_empty(10 * nabiertos * sizeof(node));
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Buffer I/O: cerrados" << endl;
+	status = opencl.GPU_buffer_input_output_empty(ncerrados * sizeof(node));
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Buffer I/O: sucesores" << endl;
+	status = opencl.GPU_buffer_input_output_empty((nnodos - 1) * numInstances * sizeof(node));
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+
+	for (int i = 0; i < num_nlongs; i += 3) {
+		nlongs[i] = 0;
+		nlongs[i + 1] = 0;
+		nlongs[i + 2] = 0;
+	}
+
+	if (DEBUG) cout << "Buffer I/O: nlongs (cl_ulong)" << endl;
+	status = opencl.GPU_buffer_input_output(num_nlongs * sizeof(cl_ulong), nlongs);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+
+	if (DEBUG) cout << "Buffer O: output (node)" << endl;
+	status = opencl.GPU_buffer_output(numInstances * sizeof(node));
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Buffer O: output_state (cl_int)" << endl;
+	status = opencl.GPU_buffer_output(numInstances * sizeof(cl_int));
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Argument: buffers" << endl;
+	status = opencl.GPU_argument_buffers();
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+
+	if (DEBUG) cout << "Argument: nnodos" << endl;
+	status = opencl.GPU_argument(sizeof(nnodos), (void*)&nnodos, 8);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Argument: nedges" << endl;
+	status = opencl.GPU_argument(sizeof(nedges), (void*)&nedges, 9);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Argument: idStart" << endl;
+	status = opencl.GPU_argument(sizeof(fin), (void*)&ini, 10);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+	}
+
+	if (DEBUG) cout << "Argument: idEnd" << endl;
+	status = opencl.GPU_argument(sizeof(fin), (void*)&fin, 11);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Argument: numInstances" << endl;
+	status = opencl.GPU_argument(sizeof(numInstances), (void*)&numInstances, 12);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	if (DEBUG) cout << "Computing optimal work sizes" << endl;
+	status = opencl.GPU_work_sizes_optimal(numInstances);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	/*Executing kernel*/
+	if (DEBUG) cout << "Executing kernel" << endl;
+	status = opencl.GPU_run();
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+
+	/*IMPORTANT: We assume all kernel instances return the same results. We'll only check their final results*/
+	if (DEBUG) cout << "Reading the kernel's output state (int=> 2=not finished, 1=found, 0=not found)" << endl;
+	status = opencl.GPU_buffer_read_host(7, numInstances * sizeof(cl_int), output_state);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+
+	while (output_state[0] == 2) {
+
+		/*Executing kernel*/
+		if (DEBUG) cout << "Executing kernel" << endl;
+		status = opencl.GPU_run();
+		if (status != CL_SUCCESS) {
+			if (DEBUG) opencl.debug_GPU_errors(status);
+			/*TODO free memory*/
+			return NULL;
+		}
+
+		if (DEBUG) cout << "Reading the kernel's output state (int=> 2=not finished, 1=found, 0=not found)" << endl;
+		status = opencl.GPU_buffer_read_host(7, numInstances * sizeof(cl_int), output_state);
+		if (status != CL_SUCCESS) {
+			if (DEBUG) opencl.debug_GPU_errors(status);
+			/*TODO free memory*/
+			return NULL;
+		}
+
+
+
+	}
+
+	if (DEBUG) cout << "Reading the kernel's output result (node)" << endl;
+	status = opencl.GPU_buffer_read_host(6, numInstances * sizeof(node), output);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	cerrados = (node*)malloc(ncerrados * sizeof(node));
+	if (DEBUG) cout << "Reading the kernel's output (closed nodes list)" << endl;
+	status = opencl.GPU_buffer_read_host(3, ncerrados * sizeof(node), cerrados);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+	ncerrados = nnodos;
+
+	/*for (int i = 0; i < nnodos; i++) {
+	cout << "cerrados["<< i <<"]: Id(" << cerrados[i].id << "), type(" << cerrados[i].type << ")" << endl;
+	}*/
+	/*-------- END GPU ----------*/
+	/*
+	for (int i = 0; i < numInstances; i++) {
+	cout << "Result Instance "<< i <<": Id(" << output[i].id << "), type(" << output[i].type << ")" << endl;
+	}*/
+
+	if (output_state[0]) {
+		if (DEBUG) cout << "Retrieving the generated path." << endl;
+		path = get_path_A_star(output[0]);
+	}
+	else {
+		path = NULL;
+	}
+
+	/*Free memory*/
+	free(output);
+	free(nlongs);
+	free(output_state);
+
+	if (DEBUG) cout << "Clearing GPU resources." << endl;
+	opencl.GPU_clear();
+
+
+	if (DEBUG) cout << "Exiting function." << endl;
+	return path;
+
+}
 /*----- HEURISTICS ------- */
 void Search_AStar::infonodes_random(cl_uint maxdistance) {
 	cl_ulong i, c;
@@ -2415,31 +2626,31 @@ double Search_AStar::time_CPU_search_A_star() {
 	if (TOFILE) myfile.close();
 
 	if (resultSearch == NULL) {
-		cout << "Time elapsed: " << elapsed << endl;
-		cout << "There is no path between " << ini << " and " << fin << " nodes." << endl;
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "There is no path between " << ini << " and " << fin << " nodes." << endl;
 		//cout << "0" << endl;
 	}
 	else {
 		//cout << resultSearch[0] << endl;
-		cout << "Time elapsed: " << elapsed << endl;
-		cout << "Path found with " << resultSearch[0] << " nodes! It is:";
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "Path found with " << resultSearch[0] << " nodes! It is:";
 		for (i = 0; i < resultSearch[0]; i++) {
-			cout << " " << resultSearch[1 + i];
+			if (RESULT) cout << " " << resultSearch[1 + i];
 		}
-		cout << endl;
+		if (RESULT) cout << endl;
 	}
 
 	return elapsed;
 }
 
-double Search_AStar::time_GPU_search_A_star() {
+double Search_AStar::time_GPU_v1_search_A_star() {
 
 	clock_t start, end;
 	double elapsed;
 	cl_ulong* resultSearch;
 	cl_ulong i;
 
-	if (DEBUG) cout << "time_GPU_search_A_star(...) starts." << endl;
+	if (DEBUG) cout << "time_GPU_v1_search_A_star(...) starts." << endl;
 
 	if (TOFILE) {
 		startTime = 0;
@@ -2451,30 +2662,287 @@ double Search_AStar::time_GPU_search_A_star() {
 	}
 
 	start = clock();
-	resultSearch = search_A_star_GPU();
+	resultSearch = search_A_star_GPU_v1();
 	end = clock();
 	elapsed = double(end - start) / CLOCKS_PER_SEC;
 
 	if (TOFILE) myfile.close();
 
 	if (resultSearch == NULL) {
-		cout << "Time elapsed: " << elapsed << endl;
-		cout << "There is no path between " << ini << " and " << fin << " nodes." << endl;
+		if(RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "There is no path between " << ini << " and " << fin << " nodes." << endl;
 		//cout << "0" << endl;
 	}
 	else {
 		//cout << resultSearch[0] << endl;
-		 cout << "Time elapsed: " << elapsed << endl;
-		cout << "Path found with " << resultSearch[0] << " nodes! It is:";
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "Path found with " << resultSearch[0] << " nodes! It is:";
 		for (i = 0; i < resultSearch[0]; i++) {
-		cout << " " << resultSearch[1 + i];
+			if (RESULT) cout << " " << resultSearch[1 + i];
 		}
-		 cout << endl;
+		if (RESULT) cout << endl;
 	}
 
 	return elapsed;
 }
 
+double Search_AStar::time_GPU_v2_search_A_star() {
+
+	clock_t start, end;
+	double elapsed;
+	cl_ulong* resultSearch;
+	cl_ulong i;
+
+	if (DEBUG) cout << "time_GPU_v2_search_A_star(...) starts." << endl;
+
+	if (TOFILE) {
+		startTime = 0;
+		startTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		string filename = "times/" + to_string(startTime) + "_GPU-nnodos" + to_string(nnodos) + ".txt";
+		myfile.open(filename, std::ofstream::out | std::ofstream::trunc);
+		myfile << to_string(nnodos) << endl;
+		myfile << to_string(dim) << endl;
+	}
+
+	start = clock();
+	resultSearch = search_A_star_GPU_v2();
+	end = clock();
+	elapsed = double(end - start) / CLOCKS_PER_SEC;
+
+	if (TOFILE) myfile.close();
+
+	if (resultSearch == NULL) {
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "There is no path between " << ini << " and " << fin << " nodes." << endl;
+		//cout << "0" << endl;
+	}
+	else {
+		//cout << resultSearch[0] << endl;
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "Path found with " << resultSearch[0] << " nodes! It is:";
+		for (i = 0; i < resultSearch[0]; i++) {
+			if (RESULT) cout << " " << resultSearch[1 + i];
+		}
+		if (RESULT) cout << endl;
+	}
+
+	return elapsed;
+}
+
+double Search_AStar::time_GPU_v3_search_A_star() {
+
+	clock_t start, end;
+	double elapsed;
+	cl_ulong* resultSearch;
+	cl_ulong i;
+
+	if (DEBUG) cout << "time_GPU_v3_search_A_star(...) starts." << endl;
+
+	if (TOFILE) {
+		startTime = 0;
+		startTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		string filename = "times/" + to_string(startTime) + "_GPU-nnodos" + to_string(nnodos) + ".txt";
+		myfile.open(filename, std::ofstream::out | std::ofstream::trunc);
+		myfile << to_string(nnodos) << endl;
+		myfile << to_string(dim) << endl;
+	}
+
+	start = clock();
+	resultSearch = search_A_star_GPU_v3();
+	end = clock();
+	elapsed = double(end - start) / CLOCKS_PER_SEC;
+
+	if (TOFILE) myfile.close();
+
+	if (resultSearch == NULL) {
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "There is no path between " << ini << " and " << fin << " nodes." << endl;
+		//cout << "0" << endl;
+	}
+	else {
+		//cout << resultSearch[0] << endl;
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "Path found with " << resultSearch[0] << " nodes! It is:";
+		for (i = 0; i < resultSearch[0]; i++) {
+			if (RESULT) cout << " " << resultSearch[1 + i];
+		}
+		if (RESULT) cout << endl;
+	}
+
+	return elapsed;
+}
+
+double Search_AStar::time_GPU_inside_search_A_star() {
+
+	clock_t start, end;
+	double elapsed;
+	cl_ulong* resultSearch;
+	cl_ulong i;
+
+	if (DEBUG) cout << "time_GPU_inside_search_A_star(...) starts." << endl;
+
+	if (TOFILE) {
+		startTime = 0;
+		startTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		string filename = "times/" + to_string(startTime) + "_GPU-nnodos" + to_string(nnodos) + ".txt";
+		myfile.open(filename, std::ofstream::out | std::ofstream::trunc);
+		myfile << to_string(nnodos) << endl;
+		myfile << to_string(dim) << endl;
+	}
+
+	start = clock();
+	resultSearch = search_A_star_GPU_inside();
+	end = clock();
+	elapsed = double(end - start) / CLOCKS_PER_SEC;
+
+	if (TOFILE) myfile.close();
+
+	if (resultSearch == NULL) {
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "There is no path between " << ini << " and " << fin << " nodes." << endl;
+		//cout << "0" << endl;
+	}
+	else {
+		//cout << resultSearch[0] << endl;
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "Path found with " << resultSearch[0] << " nodes! It is:";
+		for (i = 0; i < resultSearch[0]; i++) {
+			if (RESULT) cout << " " << resultSearch[1 + i];
+		}
+		if (RESULT) cout << endl;
+	}
+
+	return elapsed;
+}
+
+double Search_AStar::time_GPU_inside_parallel_search_A_star() {
+
+	clock_t start, end;
+	double elapsed;
+	cl_ulong* resultSearch;
+	cl_ulong i;
+
+	if (DEBUG) cout << "time_GPU_inside_parallel_search_A_star(...) starts." << endl;
+
+	if (TOFILE) {
+		startTime = 0;
+		startTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		string filename = "times/" + to_string(startTime) + "_GPU-nnodos" + to_string(nnodos) + ".txt";
+		myfile.open(filename, std::ofstream::out | std::ofstream::trunc);
+		myfile << to_string(nnodos) << endl;
+		myfile << to_string(dim) << endl;
+	}
+
+	start = clock();
+	resultSearch = search_A_star_GPU_inside_parallel();
+	end = clock();
+	elapsed = double(end - start) / CLOCKS_PER_SEC;
+
+	if (TOFILE) myfile.close();
+
+	if (resultSearch == NULL) {
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "There is no path between " << ini << " and " << fin << " nodes." << endl;
+		//cout << "0" << endl;
+	}
+	else {
+		//cout << resultSearch[0] << endl;
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "Path found with " << resultSearch[0] << " nodes! It is:";
+		for (i = 0; i < resultSearch[0]; i++) {
+			if (RESULT) cout << " " << resultSearch[1 + i];
+		}
+		if (RESULT) cout << endl;
+	}
+
+	return elapsed;
+}
+
+double Search_AStar::time_GPU_inside_instances_search_A_star(int instances) {
+
+	clock_t start, end;
+	double elapsed;
+	cl_ulong* resultSearch;
+	cl_ulong i;
+
+	if (DEBUG) cout << "time_GPU_inside_instances_search_A_star(...) starts." << endl;
+
+	if (TOFILE) {
+		startTime = 0;
+		startTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		string filename = "times/" + to_string(startTime) + "_GPU-nnodos" + to_string(nnodos) + ".txt";
+		myfile.open(filename, std::ofstream::out | std::ofstream::trunc);
+		myfile << to_string(nnodos) << endl;
+		myfile << to_string(dim) << endl;
+	}
+
+	start = clock();
+	resultSearch = search_A_star_GPU_inside_instances(instances);
+	end = clock();
+	elapsed = double(end - start) / CLOCKS_PER_SEC;
+
+	if (TOFILE) myfile.close();
+
+	if (resultSearch == NULL) {
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "There is no path between " << ini << " and " << fin << " nodes." << endl;
+		//cout << "0" << endl;
+	}
+	else {
+		//cout << resultSearch[0] << endl;
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "Path found with " << resultSearch[0] << " nodes! It is:";
+		for (i = 0; i < resultSearch[0]; i++) {
+			if (RESULT) cout << " " << resultSearch[1 + i];
+		}
+		if (RESULT) cout << endl;
+	}
+
+	return elapsed;
+}
+
+double Search_AStar::time_CPU_inside_instances_search_A_star(int instances) {
+
+	clock_t start, end;
+	double elapsed;
+	cl_ulong* resultSearch;
+	cl_ulong i;
+
+	if (DEBUG) cout << "time_CPU_inside_instances_search_A_star(...) starts." << endl;
+
+	if (TOFILE) {
+		startTime = 0;
+		startTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		string filename = "times/" + to_string(startTime) + "_CPU-nnodos" + to_string(nnodos) + ".txt";
+		myfile.open(filename, std::ofstream::out | std::ofstream::trunc);
+		myfile << to_string(nnodos) << endl;
+		myfile << to_string(dim) << endl;
+	}
+
+	start = clock();
+	resultSearch = search_A_star_CPU_inside_instances(instances);
+	end = clock();
+	elapsed = double(end - start) / CLOCKS_PER_SEC;
+
+	if (TOFILE) myfile.close();
+
+	if (resultSearch == NULL) {
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "There is no path between " << ini << " and " << fin << " nodes." << endl;
+		//cout << "0" << endl;
+	}
+	else {
+		//cout << resultSearch[0] << endl;
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "Path found with " << resultSearch[0] << " nodes! It is:";
+		for (i = 0; i < resultSearch[0]; i++) {
+			if (RESULT) cout << " " << resultSearch[1 + i];
+		}
+		if (RESULT) cout << endl;
+	}
+
+	return elapsed;
+}
 /*----- ERRORS------- */
 void Search_AStar::debug_print_connections() {
 	cl_ulong i, j;

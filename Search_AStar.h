@@ -16,6 +16,7 @@
 #define SUCCESS 0
 #define FAILURE 1
 #define DEBUG false
+#define RESULT true
 #define TOFILE false
 
 using namespace std;
@@ -98,6 +99,8 @@ public:
 	cl_ulong* search_A_star_GPU();
 	cl_ulong* search_A_star_GPU_inside();
 	cl_ulong* search_A_star_GPU_inside_parallel();
+	cl_ulong* search_A_star_GPU_inside_instances(cl_int numInstances);
+	cl_ulong* search_A_star_CPU_inside_instances(cl_int numInstances);
 
 	/*----- HEURISTICS ------- */
 	void infonodes_random(cl_uint maxdistance);
@@ -107,6 +110,13 @@ public:
 	/*----- MEASURE ELAPSED TIME------- */
 	double time_CPU_search_A_star();
 	double time_GPU_search_A_star();
+	double time_GPU_v1_search_A_star();
+	double time_GPU_v2_search_A_star();
+	double time_GPU_v3_search_A_star();
+	double time_GPU_inside_search_A_star();
+	double time_GPU_inside_parallel_search_A_star();
+	double time_GPU_inside_instances_search_A_star(int instances);
+	double time_CPU_inside_instances_search_A_star(int instances);
 
 	/*----- ERRORS------- */
 	void debug_print_connections();
