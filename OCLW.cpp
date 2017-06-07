@@ -619,8 +619,10 @@ cl_int OCLW::GPU_clear() {
 	}
 
 	for (i = 0; i < nbuffers; i++) {
+
 		status = clReleaseMemObject(buffers[i]);
 		if (status != CL_SUCCESS) return status;
+		
 	}
 	nbuffers = 0;
 
@@ -672,10 +674,10 @@ cl_int OCLW::GPU_clear_buffer(cl_uint numBuffer) {
 
 cl_int OCLW::GPU_set_device_type(cl_int flag) {
 	OCLW::flagDeviceType = OCLW::GPU;
-	if (flag == CL_DEVICE_TYPE_GPU) {
+	if (flag == CL_DEVICE_TYPE_GPU || flag == OCLW::GPU) {
 		OCLW::flagDeviceType = OCLW::GPU;
 	}
-	else if (flag == CL_DEVICE_TYPE_CPU) {
+	else if (flag == CL_DEVICE_TYPE_CPU || flag == OCLW::CPU) {
 		OCLW::flagDeviceType = OCLW::CPU;
 	}
 

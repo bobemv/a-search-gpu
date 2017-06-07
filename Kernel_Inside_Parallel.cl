@@ -131,7 +131,7 @@ void bubblesort(__global node *elems, const ulong numElems){
 }
 
 
-__kernel void searchastar_inside_parallel(__global infonode *infonodes,
+__kernel void searchastar(__global infonode *infonodes,
 						 __global edge *conexiones,
 						 __global node *abiertos,
 						 __global node *cerrados,

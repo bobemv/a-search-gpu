@@ -2262,6 +2262,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside_instances(cl_int numInstances) 
 
 }
 
+/*It has problemas. Doesn't work well with a large number of nodes. Some memory problems occur when I want to free it.*/
 cl_ulong* Search_AStar::search_A_star_CPU_inside_instances(cl_int numInstances) {
 	node* mem_aux = NULL;
 	cl_ulong* path;
@@ -2524,6 +2525,159 @@ cl_ulong* Search_AStar::search_A_star_CPU_inside_instances(cl_int numInstances) 
 	if (DEBUG) cout << "Clearing GPU resources." << endl;
 	opencl.GPU_clear();
 
+
+	if (DEBUG) cout << "Exiting function." << endl;
+	return path;
+
+}
+cl_ulong* Search_AStar::search_A_star_CPU_instances(cl_int numInstances) {
+	node* mem_aux = NULL;
+	cl_ulong* path;
+	bool found = false;
+	node actual;
+	node sucesor;
+	node inicial;
+	cl_ulong i, j;
+	int num = 0;
+
+	while (num < numInstances){
+		clear_search_variables();
+		found = false;
+
+		inicial.type = ini;
+		indexnodes++;
+		inicial.id = indexnodes;
+		inicial.g = 0;
+		inicial.parent = 0;
+
+		append_open_list(inicial);
+
+
+		while (nabiertos > 0 && !found) {
+			/*We obtain the node with smallest f value (located at the back of the list thanks to our quicksort).*/
+			actual = pop_open_list();
+			if (DEBUG) cout << "Actual node: " << actual.type << endl;
+
+
+			if (TOFILE) {
+				unsigned long passTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+				myfile << to_string(passTime - startTime) << " " << to_string(actual.type) << " ";
+			}
+
+			/*Generamos sucesores*/
+			if (DEBUG) cout << "Generating list of successors." << endl;
+			nsucesores = 0;
+			genera_sucesores(actual);
+			if (nsucesores == 0) {
+				if (DEBUG) cout << "There are no more nodes left to explore and the goal node was not found." << endl;
+				/*Free memory*/
+				break;
+			}
+			/* Expandimos cada sucesor*/
+			i = 0;
+			if (DEBUG) cout << nsucesores << " node(s) to be expanded. Expanding each successor node." << endl;
+			while (i < nsucesores) {
+
+				sucesor = sucesores[i];
+
+				if (TOFILE) {
+					myfile << to_string(sucesor.type) << " ";
+				}
+
+				if (DEBUG) cout << "Successor node: " << sucesor.type << endl;
+
+				/*Si es el nodo final, terminamos.*/
+				if (sucesor.type == fin) {
+					if (DEBUG) cout << "Goal node (" << sucesor.type << ") found " << endl;
+					found = true;
+					break;
+				}
+
+				/*Calculamos, f, g y h.*/
+				if (DEBUG) cout << "Computing f, g and h." << endl;
+				sucesor.g = actual.g + search_cost_node_2_node(actual.type, sucesor.type);
+				sucesor.h = heuristic_distance(sucesor.type, fin);
+				if (DEBUG) cout << "H: " << sucesor.h << endl;
+				sucesor.f = sucesor.g + sucesor.h;
+
+				/*Buscamos si hay un nodos con el mismo id en abiertos. Si existe Y con una f menor, se descarta el sucesor.*/
+				if (DEBUG) cout << "Looking up the open nodes list." << endl;
+				bool flagSkip = false;
+				j = 0;
+				while (j < nabiertos) {
+					if (abiertos[j].type == sucesor.type && abiertos[j].f <= sucesor.f) {
+						flagSkip = true;
+						break;
+					}
+					j++;
+				}
+
+				if (flagSkip) {
+					i++;
+					continue;
+				}
+
+				/*Buscamos si hay un nodos con el mismo id en cerrados. Si existe Y con una f menor, se descarta el sucesor.*/
+				if (DEBUG) cout << "Looking up the closed nodes list." << endl;
+				j = 0;
+				while (j < ncerrados) {
+					if (cerrados[j].type == sucesor.type && cerrados[j].f <= sucesor.f) {
+						flagSkip = true;
+						break;
+					}
+					j++;
+				}
+
+				if (!flagSkip) {
+					if (DEBUG) cout << "Adding it to the open list." << endl;
+					append_open_list(sucesor);
+				}
+
+				i++;
+
+			}
+
+			if (TOFILE) {
+				myfile << endl;
+			}
+
+			free(sucesores);
+			nsucesores = 0;
+			sucesores = NULL;
+
+			if (DEBUG) cout << "Adding actual node to the closed nodes list." << endl;
+			append_closed_list(actual);
+
+			if (DEBUG) cout << "Quicksorting the open nodes list." << endl;
+			/*printf("Antes bubblesort\n");
+			printf("nabiertos: %ld\n", nabiertos);
+			for (cl_ulong k = 0; k<nabiertos; k++) {
+			cout << abiertos[k].id << "(" << abiertos[k].type << "):" << abiertos[k].f << " ";
+			}
+			cout << endl;*/
+			quicksort(abiertos, 0, nabiertos - 1);
+			/*printf("Despues bubblesort\n");
+			printf("nabiertos: %ld\n", nabiertos);
+			for (cl_ulong k = 0; k<nabiertos; k++) {
+			cout << abiertos[k].id << "(" << abiertos[k].type << "):" << abiertos[k].f << " ";
+			}
+			cout << endl;*/
+
+		}
+		num++;
+	}
+
+	if (found) {
+		if (DEBUG) cout << "Retrieving the generated path." << endl;
+		path = get_path_A_star(sucesor);
+	}
+	else {
+		path = NULL;
+	}
+
+	/*Free memory*/
+	if (DEBUG) cout << "Freeing memory and resetting variables." << endl;
+	clear_search_variables();
 
 	if (DEBUG) cout << "Exiting function." << endl;
 	return path;
@@ -2943,6 +3097,49 @@ double Search_AStar::time_CPU_inside_instances_search_A_star(int instances) {
 
 	return elapsed;
 }
+
+double Search_AStar::time_CPU_instances_search_A_star(int instances) {
+
+	clock_t start, end;
+	double elapsed;
+	cl_ulong* resultSearch;
+	cl_ulong i;
+
+	if (DEBUG) cout << "time_CPU_instances_search_A_star(...) starts." << endl;
+
+	if (TOFILE) {
+		startTime = 0;
+		startTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		string filename = "times/" + to_string(startTime) + "_CPU-nnodos" + to_string(nnodos) + ".txt";
+		myfile.open(filename, std::ofstream::out | std::ofstream::trunc);
+		myfile << to_string(nnodos) << endl;
+		myfile << to_string(dim) << endl;
+	}
+
+	start = clock();
+	resultSearch = search_A_star_CPU_instances(instances);
+	end = clock();
+	elapsed = double(end - start) / CLOCKS_PER_SEC;
+
+	if (TOFILE) myfile.close();
+
+	if (resultSearch == NULL) {
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "There is no path between " << ini << " and " << fin << " nodes." << endl;
+		//cout << "0" << endl;
+	}
+	else {
+		//cout << resultSearch[0] << endl;
+		if (RESULT) cout << "Time elapsed: " << elapsed << endl;
+		if (RESULT) cout << "Path found with " << resultSearch[0] << " nodes! It is:";
+		for (i = 0; i < resultSearch[0]; i++) {
+			if (RESULT) cout << " " << resultSearch[1 + i];
+		}
+		if (RESULT) cout << endl;
+	}
+
+	return elapsed;
+}
 /*----- ERRORS------- */
 void Search_AStar::debug_print_connections() {
 	cl_ulong i, j;
@@ -2996,6 +3193,8 @@ void Search_AStar::clear_search_variables() {
 
 	expand = 0;
 	insert = 0;
+
+	indexnodes = 0; //CARE could spawn problems. If A* functions stop working, delete this line.
 
 }
 node Search_AStar::pop_open_list() {

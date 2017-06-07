@@ -101,7 +101,7 @@ public:
 	cl_ulong* search_A_star_GPU_inside_parallel();
 	cl_ulong* search_A_star_GPU_inside_instances(cl_int numInstances);
 	cl_ulong* search_A_star_CPU_inside_instances(cl_int numInstances);
-
+	cl_ulong* search_A_star_CPU_instances(cl_int numInstances);
 	/*----- HEURISTICS ------- */
 	void infonodes_random(cl_uint maxdistance);
 	void infonodes_grid();
@@ -117,6 +117,7 @@ public:
 	double time_GPU_inside_parallel_search_A_star();
 	double time_GPU_inside_instances_search_A_star(int instances);
 	double time_CPU_inside_instances_search_A_star(int instances);
+	double time_CPU_instances_search_A_star(int instances);
 
 	/*----- ERRORS------- */
 	void debug_print_connections();

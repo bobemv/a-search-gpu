@@ -3,17 +3,20 @@
 int main(int argc, char* argv[]) {
 
 	Tests tests;
-
+	cl_float sparsefactor[] = { 0.001, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1 };
+	int numInstances = 20;
+	int reps = 20;
+	int nsparse = sizeof(sparsefactor) / sizeof(cl_float);
 	//tests.standard_single(200, 0.8, true);
 	//tests.grid_single(50, 0.65, false);
 
 	
-	cl_ulong nnodosarray[] = {500};
+	cl_ulong nnodosarray[] = {50, 100, 200, 500};
 	int numElems = sizeof(nnodosarray) / sizeof(cl_ulong);
 
 	for (int i = 0; i < numElems; i++) {
 		cout << i << endl;
-		tests.standard_sparsefactor(nnodosarray[i], 1, true);
+		tests.test_F(nnodosarray[i], reps, sparsefactor, nsparse, numInstances, true);
 	}
 
 	/*
@@ -27,6 +30,8 @@ int main(int argc, char* argv[]) {
 	*/
 	
 	//tests.standard_sparsefactor(400, 5, false);
+
+
 
 	return 0;
 

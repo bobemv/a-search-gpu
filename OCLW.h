@@ -72,7 +72,7 @@ public:
 	cl_int GPU_clear_buffer(cl_uint numBuffer);
 
 	cl_int GPU_set_device_type(cl_int flag);
-	OCLW::DeviceType GPU_get_device_type();
+	DeviceType GPU_get_device_type();
 
 	/*----- UTILITY ------- */
 	int convertToString(const char *filename, string& s);
