@@ -49,6 +49,8 @@ public:
 	/*----- MAIN FUNCTIONS ------- */
 	cl_int GPU_setup();
 	cl_int GPU_program(char *filename);
+	cl_program GPU_program_get(char *filename);
+	void GPU_program_set(cl_program prog);
 	cl_int GPU_buffer(size_t sizeBuffer, void *data, cl_mem_flags flags);
 	cl_int GPU_buffer_input(size_t sizeBuffer, void *data);
 	cl_int GPU_buffer_output(size_t sizeBuffer);

@@ -1119,22 +1119,9 @@ cl_ulong* Search_AStar::search_A_star_GPU_v3() {
 	/*Extra variables necessary because of our GPU kernel*/
 	cl_int status;
 	size_t sizeAux;
-	OCLW opencl;
 	cl_ulong *output = NULL;
 
-	/*Creating context, command queue and program for our kernel*/
-	status = opencl.GPU_setup();
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
-	status = opencl.GPU_program("Kernel_v3.cl");
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
+
 
 	if (DEBUG) cout << "Creating our kernel" << endl;
 	status = opencl.GPU_kernel(fun);
@@ -1421,7 +1408,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_v3() {
 	clear_search_variables();
 
 	if (DEBUG) cout << "Clearing GPU resources." << endl;
-	opencl.GPU_clear();
+	opencl.GPU_clear_kernel();
 
 
 	if (DEBUG) cout << "Exiting function." << endl;
@@ -3152,13 +3139,16 @@ void Search_AStar::debug_print_connections() {
 }
 
 /*----- UTILITY ------- */
-void Search_AStar::random_start_end() {
+void Search_AStar::random_start_end(int miniseed) {
 	
-	srand(time(NULL));
+	srand(time(NULL)+miniseed);
 
 	ini = rand() % nnodos;
 
-	ini = rand() % nnodos;
+	fin = rand() % nnodos;
+	while (fin == ini) {
+		fin = rand() % nnodos;
+	}
 
 }
 cl_bool Search_AStar::compareNodes(node* const &n1, node* const &n2) {
@@ -3299,6 +3289,30 @@ Search_AStar::Search_AStar(cl_ulong nnodos, cl_float sparsefactor, cl_uint maxco
 	Search_AStar::maxcoste = maxcoste;
 	Search_AStar::ini = ini;
 	Search_AStar::fin = fin;
+	Search_AStar::graphtype = Search_AStar::STANDARD;
+	nabiertos = ncerrados = nsucesores = expand = insert = indexnodes = 0;
+	abiertos = cerrados = sucesores = NULL;
+	create_undirected_graph();
+	while (nedges == 0) {
+		create_undirected_graph();
+	}
+
+	infonodes_random(maxdistance);
+	Search_AStar::filename = filename;
+	Search_AStar::fun = fun;
+	//filename = "HelloWorld_Kernel.cl";
+	//fun = "searchastar";
+}
+
+Search_AStar::Search_AStar(cl_ulong nnodos, cl_float sparsefactor, cl_uint maxcoste, cl_uint maxdistance, cl_ulong ini, cl_ulong fin, char *filename, char *fun, OCLW opencl)
+{
+	Search_AStar::nnodos = nnodos;
+	Search_AStar::dim = 0;
+	Search_AStar::sparsefactor = sparsefactor;
+	Search_AStar::maxcoste = maxcoste;
+	Search_AStar::ini = ini;
+	Search_AStar::fin = fin;
+	Search_AStar::opencl = opencl;
 	Search_AStar::graphtype = Search_AStar::STANDARD;
 	nabiertos = ncerrados = nsucesores = expand = insert = indexnodes = 0;
 	abiertos = cerrados = sucesores = NULL;

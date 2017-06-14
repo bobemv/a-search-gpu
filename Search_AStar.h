@@ -62,6 +62,8 @@ public:
 	node *abiertos, *cerrados, *sucesores;
 	cl_ulong nabiertos, ncerrados, nsucesores, expand, insert;
 	infonode *infonodes;
+	OCLW opencl;
+
 	/*Location of GPU function*/
 	char *filename;
 	char *fun;
@@ -73,6 +75,7 @@ public:
 
 	Search_AStar(cl_ulong nnodos, cl_float sparsefactor, cl_uint maxcoste, cl_uint maxdistance, cl_ulong ini, cl_ulong fin);
 	Search_AStar(cl_ulong nnodos, cl_float sparsefactor, cl_uint maxcoste, cl_uint maxdistance, cl_ulong ini, cl_ulong fin, char *filename, char *fun);
+	Search_AStar(cl_ulong nnodos, cl_float sparsefactor, cl_uint maxcoste, cl_uint maxdistance, cl_ulong ini, cl_ulong fin, char *filename, char *fun, OCLW opencl);
 	Search_AStar(cl_ulong dim, cl_float blockfactor, cl_ulong ini, cl_ulong fin, char *filename, char *fun);
 
 	~Search_AStar();
@@ -123,7 +126,7 @@ public:
 	void debug_print_connections();
 
 	/*----- UTILITY ------- */
-	void random_start_end();
+	void random_start_end(int miniseed);
 	cl_bool compareNodes(node* const &n1, node* const &n2);
 	void clear_search_variables();
 	node pop_open_list();

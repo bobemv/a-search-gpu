@@ -119,7 +119,7 @@ int Tests::standard_sparsefactor(cl_ulong nnodos, int reps, bool debug)
 			//tGPU[j] = (*clSearch).time_CPU_inside_instances_search_A_star(100);
 			tCPU[j] = tGPU[j];
 
-			(*clSearch).random_start_end();
+			(*clSearch).random_start_end(j);
 		}
 
 		//if (debug) cout << "Writing file " << endl;
@@ -184,7 +184,7 @@ int Tests::test_A(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEle
 			tGPU[j] = (*clSearch).time_GPU_inside_search_A_star();
 			//tCPU[j] = tGPU[j];
 
-			(*clSearch).random_start_end();
+			(*clSearch).random_start_end(j);
 		}
 
 		//if (debug) cout << "Writing file " << endl;
@@ -249,7 +249,7 @@ int Tests::test_B1(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEl
 			tGPU[j] = (*clSearch).time_GPU_v1_search_A_star();
 			//tCPU[j] = tGPU[j];
 
-			(*clSearch).random_start_end();
+			(*clSearch).random_start_end(j);
 		}
 
 		//if (debug) cout << "Writing file " << endl;
@@ -314,7 +314,7 @@ int Tests::test_B2(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEl
 			tGPU[j] = (*clSearch).time_GPU_v2_search_A_star();
 			//tCPU[j] = tGPU[j];
 
-			(*clSearch).random_start_end();
+			(*clSearch).random_start_end(j);
 		}
 
 		//if (debug) cout << "Writing file " << endl;
@@ -346,6 +346,10 @@ int Tests::test_B3(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEl
 	cl_ulong fin = nnodos - 1;
 	cl_uint maxdistance = 300;
 	cl_uint maxcoste = 50;
+	cl_int status;
+	OCLW opencl;
+	char *fileKernel = "Kernel_v3.cl";
+	Search_AStar *clSearch;
 
 	int i = 0, j = 0;
 	/*--- END ---*/
@@ -354,16 +358,34 @@ int Tests::test_B3(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEl
 	string filename = "graphs/test_B3/" + to_string(startTime) + "standard_sparsefactor-nnodos" + to_string(nnodos) + ".txt";
 	myfile.open(filename, std::ofstream::out | std::ofstream::trunc);
 
+	/*Creating context, command queue and program for our kernel*/
+	status = opencl.GPU_setup();
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return FAILURE;
+	}
+	status = opencl.GPU_program(fileKernel);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return FAILURE;
+	}
+
+
 	myfile << "SPARSE CPU_MED GPU_MED CPU_AVG GPU_AVG\n";
 	if (debug) cout << "Let's instantiate a Search_AStar object with nnodos = " << nnodos << " and sparsefactor = " << sparsefactor[i] << endl;
-	Search_AStar *clSearch = new Search_AStar(nnodos, sparsefactor[0], maxcoste, maxdistance, ini, fin, "HelloWorld_Kernel.cl", "searchastar");
-	if (debug) cout << "GPU (WARMUP)" << endl;
-	(*clSearch).time_GPU_inside_search_A_star();
+	for (i = 0; i < reps; i++) {
+		clSearch = new Search_AStar(nnodos, sparsefactor[0], maxcoste, maxdistance, ini, fin, fileKernel, "searchastar", opencl);
+		if (debug) cout << "GPU (WARMUP)" << endl;
+		(*clSearch).time_GPU_v3_search_A_star();
+	}
+	
 	delete clSearch;
 
 	for (i = 0; i < numElems; i++) {
 		if (debug) cout << "Let's instantiate a Search_AStar object with nnodos = " << nnodos << " and sparsefactor = " << sparsefactor[i] << endl;
-		Search_AStar *clSearch = new Search_AStar(nnodos, sparsefactor[i], maxcoste, maxdistance, ini, fin, "HelloWorld_Kernel.cl", "searchastar");
+		clSearch = new Search_AStar(nnodos, sparsefactor[i], maxcoste, maxdistance, ini, fin, fileKernel, "searchastar", opencl);
 		double* tCPU = (double*)malloc(reps * sizeof(double));
 		double* tGPU = (double*)malloc(reps * sizeof(double));
 
@@ -379,7 +401,7 @@ int Tests::test_B3(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEl
 			tGPU[j] = (*clSearch).time_GPU_v3_search_A_star();
 			//tCPU[j] = tGPU[j];
 
-			(*clSearch).random_start_end();
+			(*clSearch).random_start_end(j);
 		}
 
 		//if (debug) cout << "Writing file " << endl;
@@ -448,7 +470,7 @@ int Tests::test_C(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEle
 			tGPUv3[j] = (*clSearch).time_GPU_v3_search_A_star();
 			//tCPU[j] = tGPU[j];
 
-			(*clSearch).random_start_end();
+			(*clSearch).random_start_end(j);
 		}
 
 		//if (debug) cout << "Writing file " << endl;
@@ -517,7 +539,7 @@ int Tests::test_D(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEle
 			tGPU_inside_parallel[j] = (*clSearch).time_GPU_inside_parallel_search_A_star();
 			//tCPU[j] = tGPU[j];
 
-			(*clSearch).random_start_end();
+			(*clSearch).random_start_end(j);
 		}
 
 		//if (debug) cout << "Writing file " << endl;
@@ -595,7 +617,7 @@ int Tests::test_E(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEle
 			tGPU_inside_parallel[j] = (*clSearch).time_GPU_inside_parallel_search_A_star();
 			//tCPU[j] = tGPU[j];
 
-			(*clSearch).random_start_end();
+			(*clSearch).random_start_end(j);
 		}
 
 		//if (debug) cout << "Writing file " << endl;
@@ -673,7 +695,7 @@ int Tests::test_F(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEle
 			tGPU[j] = (*clSearch).time_GPU_inside_instances_search_A_star(numInstances);
 			//tCPU[j] = tGPU[j];
 
-			(*clSearch).random_start_end();
+			(*clSearch).random_start_end(j);
 		}
 
 		//if (debug) cout << "Writing file " << endl;
@@ -755,7 +777,7 @@ int Tests::test_all(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numE
 			tGPU_inside_parallel[j] = (*clSearch).time_GPU_inside_parallel_search_A_star();
 			//tCPU[j] = tGPU[j];
 
-			(*clSearch).random_start_end();
+			(*clSearch).random_start_end(j);
 		}
 
 		//if (debug) cout << "Writing file " << endl;
@@ -837,7 +859,7 @@ int Tests::test_G(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEle
 			tGPU_inside_parallel[j] = (*clSearch).time_GPU_inside_parallel_search_A_star();
 			//tCPU[j] = tGPU[j];
 
-			(*clSearch).random_start_end();
+			(*clSearch).random_start_end(j);
 		}
 
 		//if (debug) cout << "Writing file " << endl;
