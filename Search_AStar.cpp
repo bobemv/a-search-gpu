@@ -570,9 +570,11 @@ cl_ulong* Search_AStar::search_A_star() {
 	if (found) {
 		if (DEBUG) cout << "Retrieving the generated path." << endl;
 		path = get_path_A_star(sucesor);
+		finalPath = path;
 	}
 	else {
 		path = NULL;
+		finalPath = NULL;
 	}
 
 	/*Free memory*/
@@ -1398,9 +1400,11 @@ cl_ulong* Search_AStar::search_A_star_GPU_v3() {
 	if (found) {
 		if (DEBUG) cout << "Retrieving the generated path." << endl;
 		path = get_path_A_star(nodeFound);
+		finalPath = path;
 	}
 	else {
 		path = NULL;
+		finalPath = NULL;
 	}
 
 	/*Free memory*/
@@ -1992,7 +1996,6 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside_instances(cl_int numInstances) 
 	/*Extra variables necessary because of our GPU kernel*/
 	cl_int status;
 	size_t sizeAux;
-	OCLW opencl;
 	node *output = NULL;
 	cl_ulong *nlongs = NULL;
 	cl_int *output_state = NULL;
@@ -2003,20 +2006,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside_instances(cl_int numInstances) 
 	output = (node*)malloc(numInstances * sizeof(node));
 	output_state = (cl_int*)malloc(numInstances * sizeof(cl_int));
 
-	/*Creating context, command queue and program for our kernel*/
-	status = opencl.GPU_setup();
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
 
-	status = opencl.GPU_program("Kernel_Inside_Instances.cl");
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
 
 	if (DEBUG) cout << "Creating our kernel" << endl;
 	status = opencl.GPU_kernel(fun);
@@ -2241,7 +2231,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside_instances(cl_int numInstances) 
 	free(output_state);
 
 	if (DEBUG) cout << "Clearing GPU resources." << endl;
-	opencl.GPU_clear();
+	opencl.GPU_clear_kernel();
 
 
 	if (DEBUG) cout << "Exiting function." << endl;
@@ -3151,6 +3141,20 @@ void Search_AStar::random_start_end(int miniseed) {
 	}
 
 }
+
+void Search_AStar::set_start_end(cl_ulong ini, cl_ulong fin) {
+	Search_AStar::ini = ini;
+	Search_AStar::fin = fin;
+}
+
+cl_ulong Search_AStar::get_start() {
+	return Search_AStar::ini;
+}
+
+cl_ulong Search_AStar::get_end() {
+	return Search_AStar::fin;
+}
+
 cl_bool Search_AStar::compareNodes(node* const &n1, node* const &n2) {
 	return n1->f > n2->f;
 }
@@ -3263,7 +3267,14 @@ node Search_AStar::append_closed_list(node nodo) {
 
 	return res;
 }
-
+cl_ulong Search_AStar::get_length_path(){
+	if (finalPath == NULL) {
+		return 0;
+	}
+	else {
+		return finalPath[0];
+	}
+}
 Search_AStar::Search_AStar(cl_ulong nnodos, cl_float sparsefactor, cl_uint maxcoste, cl_uint maxdistance, cl_ulong ini, cl_ulong fin)
 {
 	Search_AStar::nnodos = nnodos;

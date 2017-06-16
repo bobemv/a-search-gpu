@@ -62,6 +62,7 @@ public:
 	node *abiertos, *cerrados, *sucesores;
 	cl_ulong nabiertos, ncerrados, nsucesores, expand, insert;
 	infonode *infonodes;
+	cl_ulong *finalPath;
 	OCLW opencl;
 
 	/*Location of GPU function*/
@@ -127,11 +128,15 @@ public:
 
 	/*----- UTILITY ------- */
 	void random_start_end(int miniseed);
+	void set_start_end(cl_ulong ini, cl_ulong fin);
+	cl_ulong get_start();
+	cl_ulong get_end();
 	cl_bool compareNodes(node* const &n1, node* const &n2);
 	void clear_search_variables();
 	node pop_open_list();
 	node append_open_list(node nodo);
 	node pop_closed_list();
 	node append_closed_list(node nodo);
+	cl_ulong get_length_path();
 	//nodeGPU *copy_nodes_2_nodesGPU(node **nodes, unsigned long tam);
 };

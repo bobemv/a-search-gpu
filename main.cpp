@@ -3,20 +3,60 @@
 int main(int argc, char* argv[]) {
 
 	Tests tests;
-	cl_float sparsefactor[] = { 0.001, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1 };
-	int numInstances = 20;
-	int reps = 100;
+	cl_float sparsefactor[] = { 0.001, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6 };
+	int numInstances = 500;
+	int reps = 50;
 	int nsparse = sizeof(sparsefactor) / sizeof(cl_float);
 	//tests.standard_single(200, 0.8, true);
 	//tests.grid_single(50, 0.65, false);
 
 	
-	cl_ulong nnodosarray[] = {50};
+	cl_ulong nnodosarray[] = {50, 100, 200};
 	int numElems = sizeof(nnodosarray) / sizeof(cl_ulong);
 
 	for (int i = 0; i < numElems; i++) {
 		cout << i << endl;
-		tests.test_B3(nnodosarray[i], reps, sparsefactor, nsparse, true);
+		tests.test_A(nnodosarray[i], reps, sparsefactor, nsparse, true);
+	}
+
+	cl_ulong nnodosarray1[] = { 50, 100, 200, 500 };
+	int numElems1 = sizeof(nnodosarray1) / sizeof(cl_ulong);
+
+	for (int i = 0; i < numElems1; i++) {
+		cout << i << endl;
+		tests.test_B1(nnodosarray1[i], reps, sparsefactor, nsparse, true);
+	}
+
+	for (int i = 0; i < numElems1; i++) {
+		cout << i << endl;
+		tests.test_B3(nnodosarray1[i], reps, sparsefactor, nsparse, true);
+	}
+
+	for (int i = 0; i < numElems1; i++) {
+		cout << i << endl;
+		tests.test_B3(nnodosarray1[i], reps, sparsefactor, nsparse, true);
+	}
+
+	for (int i = 0; i < numElems1; i++) {
+		cout << i << endl;
+		tests.test_C(nnodosarray1[i], reps, sparsefactor, nsparse, true);
+	}
+
+	for (int i = 0; i < numElems1; i++) {
+		cout << i << endl;
+		tests.test_G(nnodosarray1[i], reps, sparsefactor, nsparse, true);
+	}
+
+
+	for (int i = 0; i < numElems1; i++) {
+		cout << i << endl;
+		tests.test_D(nnodosarray[i], reps, sparsefactor, nsparse, true);
+	}
+
+	reps = 20;
+	for (int i = 0; i < numElems1; i++) {
+		cout << i << endl;
+		tests.test_F(nnodosarray[i], reps, sparsefactor, nsparse, numInstances, true);
 	}
 
 	/*
