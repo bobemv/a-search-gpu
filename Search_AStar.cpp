@@ -598,21 +598,6 @@ cl_ulong* Search_AStar::search_A_star_GPU_v1() {
 	/*Extra variables necessary because of our GPU kernel*/
 	cl_int status;
 	size_t sizeAux;
-	OCLW opencl;
-
-	/*Creating context, command queue and program for our kernel*/
-	status = opencl.GPU_setup();
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
-	status = opencl.GPU_program("Kernel_v1.cl");
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
 
 	if (DEBUG) cout << "Creating our kernel" << endl;
 	status = opencl.GPU_kernel(fun);
@@ -824,7 +809,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_v1() {
 	if (DEBUG) cout << "Freeing memory and resetting variables." << endl;
 	clear_search_variables();
 
-	opencl.GPU_clear();
+	opencl.GPU_clear_kernel();
 	if (DEBUG) cout << "Exiting function." << endl;
 	return path;
 
@@ -842,21 +827,6 @@ cl_ulong* Search_AStar::search_A_star_GPU_v2() {
 	/*Extra variables necessary because of our GPU kernel*/
 	cl_int status;
 	size_t sizeAux;
-	OCLW opencl;
-
-	/*Creating context, command queue and program for our kernel*/
-	status = opencl.GPU_setup();
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
-	status = opencl.GPU_program("Kernel_v2.cl");
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
 
 	if (DEBUG) cout << "Creating our kernel" << endl;
 	status = opencl.GPU_kernel(fun);
@@ -1102,7 +1072,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_v2() {
 	if (DEBUG) cout << "Freeing memory and resetting variables." << endl;
 	clear_search_variables();
 
-	opencl.GPU_clear();
+	opencl.GPU_clear_kernel();
 
 	if (DEBUG) cout << "Exiting function." << endl;
 	return path;
@@ -1429,7 +1399,6 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside() {
 	/*Extra variables necessary because of our GPU kernel*/
 	cl_int status;
 	size_t sizeAux;
-	OCLW opencl;
 	node *output = NULL;
 	cl_ulong *nlongs = NULL;
 	cl_int *output_state = NULL;
@@ -1440,20 +1409,6 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside() {
 	output = (node*)malloc(sizeof(node));
 	output_state = (cl_int*)malloc(sizeof(cl_int));
 
-	/*Creating context, command queue and program for our kernel*/
-	status = opencl.GPU_setup();
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
-
-	status = opencl.GPU_program("Kernel_Inside.cl");
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
 
 	if (DEBUG) cout << "Creating our kernel" << endl;
 	status = opencl.GPU_kernel(fun);
@@ -1660,7 +1615,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside() {
 	free(output_state);
 
 	if (DEBUG) cout << "Clearing GPU resources." << endl;
-	opencl.GPU_clear();
+	opencl.GPU_clear_kernel();
 
 
 	if (DEBUG) cout << "Exiting function." << endl;
@@ -1676,7 +1631,6 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside_parallel() {
 	/*Extra variables necessary because of our GPU kernel*/
 	cl_int status;
 	size_t sizeAux;
-	OCLW opencl;
 	node *output = NULL;
 	cl_ulong *nlongs = NULL;
 	cl_int *output_state = NULL;
@@ -1690,21 +1644,6 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside_parallel() {
 	info_threads = (cl_int*)malloc(num_childthreads * sizeof(cl_int));
 
 
-	/*Creating context, command queue and program for our kernel*/
-	status = opencl.GPU_setup();
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
-
-	if (DEBUG) cout << "Building program " << endl;
-	status = opencl.GPU_program("Kernel_Inside_Parallel.cl");
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
 
 	if (DEBUG) cout << "Creating our kernel" << endl;
 	status = opencl.GPU_kernel(fun);
@@ -1979,7 +1918,7 @@ cl_ulong* Search_AStar::search_A_star_GPU_inside_parallel() {
 	free(info_threads);
 
 	if (DEBUG) cout << "Clearing GPU resources." << endl;
-	opencl.GPU_clear();
+	opencl.GPU_clear_kernel();
 
 
 	if (DEBUG) cout << "Exiting function." << endl;
@@ -2249,7 +2188,6 @@ cl_ulong* Search_AStar::search_A_star_CPU_inside_instances(cl_int numInstances) 
 	/*Extra variables necessary because of our GPU kernel*/
 	cl_int status;
 	size_t sizeAux;
-	OCLW opencl;
 	node *output = NULL;
 	cl_ulong *nlongs = NULL;
 	cl_int *output_state = NULL;
@@ -2262,20 +2200,6 @@ cl_ulong* Search_AStar::search_A_star_CPU_inside_instances(cl_int numInstances) 
 
 	opencl.GPU_set_device_type(OCLW::CPU);
 
-	/*Creating context, command queue and program for our kernel*/
-	status = opencl.GPU_setup();
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
-
-	status = opencl.GPU_program("Kernel_Inside_Instances.cl");
-	if (status != CL_SUCCESS) {
-		if (DEBUG) opencl.debug_GPU_errors(status);
-		/*TODO free memory*/
-		return NULL;
-	}
 
 	if (DEBUG) cout << "Creating our kernel" << endl;
 	status = opencl.GPU_kernel(fun);
@@ -2500,7 +2424,7 @@ cl_ulong* Search_AStar::search_A_star_CPU_inside_instances(cl_int numInstances) 
 	free(output_state);
 
 	if (DEBUG) cout << "Clearing GPU resources." << endl;
-	opencl.GPU_clear();
+	opencl.GPU_clear_kernel();
 
 
 	if (DEBUG) cout << "Exiting function." << endl;

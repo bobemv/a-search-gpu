@@ -265,9 +265,9 @@ int Tests::test_B1(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEl
 
 	myfile << "SPARSE CPU_MED GPU_MED CPU_AVG GPU_AVG\n";
 	if (debug) cout << "Let's instantiate a Search_AStar object with nnodos = " << nnodos << " and sparsefactor = " << sparsefactor[i] << endl;
-	clSearch = new Search_AStar(nnodos, sparsefactor[0], maxcoste, maxdistance, ini, fin, fileKernel, "searchastar", opencl);
+	clSearch = new Search_AStar(nnodos, sparsefactor[numElems - 1], maxcoste, maxdistance, ini, fin, fileKernel, "searchastar", opencl);
 	if (debug) cout << "GPU (WARMUP)" << endl;
-	(*clSearch).time_GPU_inside_search_A_star();
+	(*clSearch).time_GPU_v1_search_A_star();
 	delete clSearch;
 
 	for (i = 0; i < numElems; i++) {
@@ -350,9 +350,9 @@ int Tests::test_B2(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEl
 
 	myfile << "SPARSE CPU_MED GPU_MED CPU_AVG GPU_AVG\n";
 	if (debug) cout << "Let's instantiate a Search_AStar object with nnodos = " << nnodos << " and sparsefactor = " << sparsefactor[i] << endl;
-	clSearch = new Search_AStar(nnodos, sparsefactor[0], maxcoste, maxdistance, ini, fin, fileKernel, "searchastar", opencl);
+	clSearch = new Search_AStar(nnodos, sparsefactor[numElems - 1], maxcoste, maxdistance, ini, fin, fileKernel, "searchastar", opencl);
 	if (debug) cout << "GPU (WARMUP)" << endl;
-	(*clSearch).time_GPU_inside_search_A_star();
+	(*clSearch).time_GPU_v2_search_A_star();
 	delete clSearch;
 
 	for (i = 0; i < numElems; i++) {
@@ -434,11 +434,11 @@ int Tests::test_B3(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEl
 
 	myfile << "SPARSE CPU_MED GPU_MED CPU_AVG GPU_AVG\n";
 	if (debug) cout << "Let's instantiate a Search_AStar object with nnodos = " << nnodos << " and sparsefactor = " << sparsefactor[i] << endl;
-	for (i = 0; i < reps; i++) {
-		clSearch = new Search_AStar(nnodos, sparsefactor[0], maxcoste, maxdistance, ini, fin, fileKernel, "searchastar", opencl);
-		if (debug) cout << "GPU (WARMUP)" << endl;
-		(*clSearch).time_GPU_v3_search_A_star();
-	}
+	
+	clSearch = new Search_AStar(nnodos, sparsefactor[numElems - 1], maxcoste, maxdistance, ini, fin, fileKernel, "searchastar", opencl);
+	if (debug) cout << "GPU (WARMUP)" << endl;
+	(*clSearch).time_GPU_v3_search_A_star();
+	
 	
 	delete clSearch;
 
@@ -555,9 +555,9 @@ int Tests::test_C(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEle
 	myfile << "SPARSE GPU_V1_MED GPU_V2_MED GPU_V3_MED GPU_V1_AVG GPU_V2_AVG GPU_V3_AVG\n";
 
 	if (debug) cout << "Let's instantiate a Search_AStar object with nnodos = " << nnodos << " and sparsefactor = " << sparsefactor[i] << endl;
-	clSearch_v1 = new Search_AStar(nnodos, sparsefactor[0], maxcoste, maxdistance, ini, fin, fileKernel_v1, "searchastar", opencl_v1);
-	clSearch_v2 = new Search_AStar(nnodos, sparsefactor[0], maxcoste, maxdistance, ini, fin, fileKernel_v2, "searchastar", opencl_v2);
-	clSearch_v3 = new Search_AStar(nnodos, sparsefactor[0], maxcoste, maxdistance, ini, fin, fileKernel_v3, "searchastar", opencl_v3);
+	clSearch_v1 = new Search_AStar(nnodos, sparsefactor[numElems - 1], maxcoste, maxdistance, ini, fin, fileKernel_v1, "searchastar", opencl_v1);
+	clSearch_v2 = new Search_AStar(nnodos, sparsefactor[numElems - 1], maxcoste, maxdistance, ini, fin, fileKernel_v2, "searchastar", opencl_v2);
+	clSearch_v3 = new Search_AStar(nnodos, sparsefactor[numElems - 1], maxcoste, maxdistance, ini, fin, fileKernel_v3, "searchastar", opencl_v3);
 	if (debug) cout << "GPU (WARMUP)" << endl;
 	(*clSearch_v1).time_GPU_v1_search_A_star();
 	(*clSearch_v2).time_GPU_v2_search_A_star();
@@ -677,8 +677,8 @@ int Tests::test_D(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEle
 
 	myfile << "SPARSE GPU_INSIDE_MED GPU_INSIDE_PARALLEL_MED GPU_INSIDE_AVG GPU_INSIDE_PARALLEL_AVG\n";
 	if (debug) cout << "Let's instantiate a Search_AStar object with nnodos = " << nnodos << " and sparsefactor = " << sparsefactor[i] << endl;
-	clSearch_inside = new Search_AStar(nnodos, sparsefactor[0], maxcoste, maxdistance, ini, fin, fileKernel_inside, "searchastar", opencl_inside);
-	clSearch_inside_parallel = new Search_AStar(nnodos, sparsefactor[0], maxcoste, maxdistance, ini, fin, fileKernel_inside_parallel, "searchastar", opencl_inside_parallel);
+	clSearch_inside = new Search_AStar(nnodos, sparsefactor[numElems - 1], maxcoste, maxdistance, ini, fin, fileKernel_inside, "searchastar", opencl_inside);
+	clSearch_inside_parallel = new Search_AStar(nnodos, sparsefactor[numElems - 1], maxcoste, maxdistance, ini, fin, fileKernel_inside_parallel, "searchastar", opencl_inside_parallel);
 	if (debug) cout << "GPU (WARMUP)" << endl;
 	(*clSearch_inside).time_GPU_inside_search_A_star();
 	(*clSearch_inside_parallel).time_GPU_inside_parallel_search_A_star();
@@ -858,7 +858,7 @@ int Tests::test_F(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEle
 
 	myfile << "SPARSE CPU_INSTANCES_MED GPU_INSIDE_INSTANCES_MED CPU_INSTANCES_AVG GPU_INSIDE_INSTANCES_AVG\n";
 	if (debug) cout << "Let's instantiate a Search_AStar object with nnodos = " << nnodos << " and sparsefactor = " << sparsefactor[i] << endl;
-	Search_AStar *clSearch = new Search_AStar(nnodos, sparsefactor[0], maxcoste, maxdistance, ini, fin, fileKernel, "searchastar", opencl);
+	Search_AStar *clSearch = new Search_AStar(nnodos, sparsefactor[numElems - 1], maxcoste, maxdistance, ini, fin, fileKernel, "searchastar", opencl);
 	if (debug) cout << "GPU (WARMUP)" << endl;
 	(*clSearch).time_GPU_inside_instances_search_A_star(5);
 	delete clSearch;
@@ -1058,8 +1058,8 @@ int Tests::test_G(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEle
 
 	myfile << "SPARSE GPU_V3_MED GPU_INSIDE_PARALLEL_MED GPU_V3_AVG GPU_INSIDE_PARALLEL_AVG\n";
 	if (debug) cout << "Let's instantiate a Search_AStar object with nnodos = " << nnodos << " and sparsefactor = " << sparsefactor[i] << endl;
-	clSearch_v3 = new Search_AStar(nnodos, sparsefactor[0], maxcoste, maxdistance, ini, fin, fileKernel_v3, "searchastar", opencl_v3);
-	clSearch_inside_parallel = new Search_AStar(nnodos, sparsefactor[0], maxcoste, maxdistance, ini, fin, fileKernel_inside_parallel, "searchastar", opencl_inside_parallel);
+	clSearch_v3 = new Search_AStar(nnodos, sparsefactor[numElems-1], maxcoste, maxdistance, ini, fin, fileKernel_v3, "searchastar", opencl_v3);
+	clSearch_inside_parallel = new Search_AStar(nnodos, sparsefactor[numElems - 1], maxcoste, maxdistance, ini, fin, fileKernel_inside_parallel, "searchastar", opencl_inside_parallel);
 	if (debug) cout << "GPU (WARMUP)" << endl;
 	(*clSearch_v3).time_GPU_v3_search_A_star();
 	(*clSearch_inside_parallel).time_GPU_inside_parallel_search_A_star();
@@ -1067,8 +1067,8 @@ int Tests::test_G(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEle
 	delete clSearch_inside_parallel;
 	for (i = 0; i < numElems; i++) {
 		if (debug) cout << "Let's instantiate a Search_AStar object with nnodos = " << nnodos << " and sparsefactor = " << sparsefactor[i] << endl;
-		clSearch_v3 = new Search_AStar(nnodos, sparsefactor[0], maxcoste, maxdistance, ini, fin, fileKernel_v3, "searchastar", opencl_v3);
-		clSearch_inside_parallel = new Search_AStar(nnodos, sparsefactor[0], maxcoste, maxdistance, ini, fin, fileKernel_inside_parallel, "searchastar", opencl_inside_parallel);
+		clSearch_v3 = new Search_AStar(nnodos, sparsefactor[i], maxcoste, maxdistance, ini, fin, fileKernel_v3, "searchastar", opencl_v3);
+		clSearch_inside_parallel = new Search_AStar(nnodos, sparsefactor[i], maxcoste, maxdistance, ini, fin, fileKernel_inside_parallel, "searchastar", opencl_inside_parallel);
 		double* tGPU_v3 = (double*)malloc(reps * sizeof(double));
 		double* tGPU_inside_parallel = (double*)malloc(reps * sizeof(double));
 
@@ -1111,6 +1111,89 @@ int Tests::test_G(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numEle
 	return 0;
 }
 
+/*CPU_inside_instances - GPU_inside_instances - #instancias eje X*/
+int Tests::test_H(cl_ulong nnodos, cl_float sparsefactor, int reps, int instances[], int numElems, bool debug)
+{
+	/*--- VARIABLES ---*/
+	cl_ulong ini = 0;
+	cl_ulong fin = nnodos - 1;
+	cl_uint maxdistance = 300;
+	cl_uint maxcoste = 50;
+	cl_int status;
+	OCLW opencl;
+	char *fileKernel = "Kernel_Inside_Instances.cl";
+	Search_AStar *clSearch;
+
+	int i = 0, j = 0;
+
+	/*--- END ---*/
+	ofstream myfile;
+	unsigned long startTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	string filename = "graphs/test_H/" + to_string(startTime) + "standard_sparsefactor-nnodos" + to_string(nnodos) + ".txt";
+	myfile.open(filename, std::ofstream::out | std::ofstream::trunc);
+
+	/*Creating context, command queue and program for our kernel*/
+	status = opencl.GPU_setup();
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	status = opencl.GPU_program(fileKernel);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return NULL;
+	}
+
+	myfile << "INSTANCES CPU_INSTANCES_MED GPU_INSIDE_INSTANCES_MED CPU_INSTANCES_AVG GPU_INSIDE_INSTANCES_AVG\n";
+	if (debug) cout << "Let's instantiate a Search_AStar object with nnodos = " << nnodos << " and sparsefactor = " << sparsefactor << endl;
+	clSearch = new Search_AStar(nnodos, sparsefactor, maxcoste, maxdistance, ini, fin, fileKernel, "searchastar", opencl);
+	if (debug) cout << "GPU (WARMUP)" << endl;
+	(*clSearch).time_GPU_inside_instances_search_A_star(5);
+	delete clSearch;
+
+	for (i = 0; i < numElems; i++) {
+		Search_AStar *clSearch = new Search_AStar(nnodos, sparsefactor, maxcoste, maxdistance, ini, fin, fileKernel, "searchastar", opencl);
+		double* tCPU = (double*)malloc(reps * sizeof(double));
+		double* tGPU = (double*)malloc(reps * sizeof(double));
+
+		myfile << to_string(instances[i]) + " ";
+		//clSearch.debug_print_connections();
+
+		for (j = 0; j < reps; j++) {
+			cout << "CPU_instances" << endl;
+			tCPU[j] = (*clSearch).time_CPU_instances_search_A_star(instances[i]);
+
+
+			cout << "GPU_inside_instances" << endl;
+			tGPU[j] = (*clSearch).time_GPU_inside_instances_search_A_star(instances[i]);
+			//tCPU[j] = tGPU[j];
+
+			(*clSearch).random_start_end(j);
+		}
+
+		//if (debug) cout << "Writing file " << endl;
+		//if (debug) cout << "Medians " << endl;
+		myfile << to_string(median(tCPU, reps)) + " ";
+		myfile << to_string(median(tGPU, reps)) + " ";
+		//if (debug) cout << "Averages " << endl;
+		myfile << to_string(average(tCPU, reps)) + " ";
+		myfile << to_string(average(tGPU, reps)) + "\n";
+		//if (debug) cout << "Finished Writing file " << endl;
+
+		free(tCPU);
+		tCPU = NULL;
+		free(tGPU);
+		tGPU = NULL;
+
+		delete clSearch;
+	}
+
+	myfile.close();
+	return 0;
+}
 
 /*Return data about path lengths*/
 int Tests::test_lengthPaths(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numElems, bool debug)
@@ -1176,10 +1259,126 @@ int Tests::test_lengthPaths(cl_ulong nnodos, int reps, cl_float sparsefactor[], 
 }
 
 
+/*Returns data about all times*/
+int Tests::test_alltimes_GPU(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numElems, bool debug)
+{
+	/*--- VARIABLES ---*/
+	cl_ulong ini = 0;
+	cl_ulong fin = nnodos - 1;
+	cl_uint maxdistance = 300;
+	cl_uint maxcoste = 50;
+	cl_int status;
+	OCLW opencl;
+	char *fileKernel = "Kernel_v3.cl";
+	Search_AStar *clSearch;
+
+	int i = 0, j = 0;
+	/*--- END ---*/
+	ofstream myfile;
+	unsigned long startTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	string filename = "graphs/test_alltimes/" + to_string(startTime) + "standard_sparsefactor-nnodos" + to_string(nnodos) + ".txt";
+	myfile.open(filename, std::ofstream::out | std::ofstream::trunc);
+
+	/*Creating context, command queue and program for our kernel*/
+	status = opencl.GPU_setup();
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return FAILURE;
+	}
+	status = opencl.GPU_program(fileKernel);
+	if (status != CL_SUCCESS) {
+		if (DEBUG) opencl.debug_GPU_errors(status);
+		/*TODO free memory*/
+		return FAILURE;
+	}
+
+
+	myfile << "SPARSE GPU\n";
+	if (debug) cout << "Let's instantiate a Search_AStar object with nnodos = " << nnodos << " and sparsefactor = " << sparsefactor[i] << endl;
+
+	clSearch = new Search_AStar(nnodos, sparsefactor[numElems - 1], maxcoste, maxdistance, ini, fin, fileKernel, "searchastar", opencl);
+	if (debug) cout << "GPU (WARMUP)" << endl;
+	(*clSearch).time_GPU_v3_search_A_star();
+
+	delete clSearch;
+
+	for (i = 0; i < numElems; i++) {
+		double tGPU;
+
+		clSearch = new Search_AStar(nnodos, sparsefactor[numElems - 1], maxcoste, maxdistance, ini, fin, fileKernel, "searchastar", opencl);
+		//clSearch.debug_print_connections();
+
+		for (j = 0; j < reps; j++) {
+			myfile << to_string(sparsefactor[i]) + " ";
+			cout << "GPU_v3" << endl;
+			tGPU = (*clSearch).time_GPU_v3_search_A_star();
+			//tCPU[j] = tGPU[j];
+
+			myfile << to_string(tGPU) + "\n";
+			(*clSearch).random_start_end(j);
+		}
+
+
+		delete clSearch;
+	}
+
+	myfile.close();
+	return 0;
+}
 
 
 
 
+
+int Tests::test_alltimes_CPU(cl_ulong nnodos, int reps, cl_float sparsefactor[], int numElems, bool debug)
+{
+	/*--- VARIABLES ---*/
+	cl_ulong ini = 0;
+	cl_ulong fin = nnodos - 1;
+	cl_uint maxdistance = 300;
+	cl_uint maxcoste = 50;
+	cl_int status;
+	OCLW opencl;
+	char *fileKernel = "Kernel_v3.cl";
+	Search_AStar *clSearch;
+
+	int i = 0, j = 0;
+	/*--- END ---*/
+	ofstream myfile;
+	unsigned long startTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	string filename = "graphs/test_alltimes/" + to_string(startTime) + "standard_sparsefactor-nnodos" + to_string(nnodos) + ".txt";
+	myfile.open(filename, std::ofstream::out | std::ofstream::trunc);
+
+
+	myfile << "SPARSE CPU\n";
+	if (debug) cout << "Let's instantiate a Search_AStar object with nnodos = " << nnodos << " and sparsefactor = " << sparsefactor[i] << endl;
+
+	clSearch = new Search_AStar(nnodos, sparsefactor[numElems - 1], maxcoste, maxdistance, ini, fin, fileKernel, "searchastar", opencl);
+	
+
+
+	for (i = 0; i < numElems; i++) {
+		double tCPU;
+
+		//clSearch.debug_print_connections();
+
+		for (j = 0; j < reps; j++) {
+			myfile << to_string(sparsefactor[i]) + " ";
+			cout << "GPU_v3" << endl;
+			tCPU = (*clSearch).time_CPU_search_A_star();
+			//tCPU[j] = tGPU[j];
+
+			myfile << to_string(tCPU) + "\n";
+			(*clSearch).random_start_end(j);
+		}
+
+
+	}
+
+	myfile.close();
+	return 0;
+}
 
 int Tests::grid_single(cl_ulong dim, cl_float blockfactor, bool debug) {
 	/*--- VARIABLES ---*/

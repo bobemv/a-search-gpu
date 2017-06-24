@@ -11,53 +11,13 @@ int main(int argc, char* argv[]) {
 	//tests.grid_single(50, 0.65, false);
 
 	
-	cl_ulong nnodosarray[] = {50, 100, 200};
-	int numElems = sizeof(nnodosarray) / sizeof(cl_ulong);
-
-	for (int i = 0; i < numElems; i++) {
-		cout << i << endl;
-		tests.test_A(nnodosarray[i], reps, sparsefactor, nsparse, true);
-	}
-
-	cl_ulong nnodosarray1[] = { 50, 100, 200, 500 };
-	int numElems1 = sizeof(nnodosarray1) / sizeof(cl_ulong);
-
-	for (int i = 0; i < numElems1; i++) {
-		cout << i << endl;
-		tests.test_B1(nnodosarray1[i], reps, sparsefactor, nsparse, true);
-	}
-
-	for (int i = 0; i < numElems1; i++) {
-		cout << i << endl;
-		tests.test_B3(nnodosarray1[i], reps, sparsefactor, nsparse, true);
-	}
-
-	for (int i = 0; i < numElems1; i++) {
-		cout << i << endl;
-		tests.test_B3(nnodosarray1[i], reps, sparsefactor, nsparse, true);
-	}
-
-	for (int i = 0; i < numElems1; i++) {
-		cout << i << endl;
-		tests.test_C(nnodosarray1[i], reps, sparsefactor, nsparse, true);
-	}
-
-	for (int i = 0; i < numElems1; i++) {
-		cout << i << endl;
-		tests.test_G(nnodosarray1[i], reps, sparsefactor, nsparse, true);
-	}
+	cl_ulong nnodosarray[] = {50, 100, 200, 500};
+	int instances[] = {10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 125, 150, 175, 200};
+	int numElems = sizeof(sparsefactor) / sizeof(cl_float);
 
 
-	for (int i = 0; i < numElems1; i++) {
-		cout << i << endl;
-		tests.test_D(nnodosarray[i], reps, sparsefactor, nsparse, true);
-	}
-
-	reps = 20;
-	for (int i = 0; i < numElems1; i++) {
-		cout << i << endl;
-		tests.test_F(nnodosarray[i], reps, sparsefactor, nsparse, numInstances, true);
-	}
+	tests.test_alltimes_CPU(500, reps, sparsefactor, numElems, true);
+	
 
 	/*
 	cl_ulong nnodosarray[] = { 10, 20, 40, 100, 200, 400};
