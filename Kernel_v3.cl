@@ -62,7 +62,8 @@ ulong search_cost_node_2_node(__global edge *conexiones, ulong nedges, ulong fro
 	return res;
 }
 
-
+// Implementación A3: paralelización de la expansión de nodos
+// en el algoritmo A*
 __kernel void searchastar(__global infonode *infonodes,
 						 __global edge *conexiones,
 						 __global node *abiertos,
@@ -80,13 +81,9 @@ __kernel void searchastar(__global infonode *infonodes,
 	int i, j;
 	node sucesor;
 
-	//printf("GPU - num: %d", num);
 	if(num >= nsucesores){
-		num = 0; //For those threads which doesn't have an associate succesor.
-	}						 
-						 
-
-	//printf("GPU - num: %d, H: %f", num, nodes[num].h);		 
+		num = 0; 
+	}						 	 
  
 	sucesor = sucesores[num];
 

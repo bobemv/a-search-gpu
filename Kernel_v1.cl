@@ -62,21 +62,18 @@ ulong search_cost_node_2_node(__global edge *conexiones, ulong nedges, ulong fro
 	return res;
 }
 
-
+// Implementación A1: paralelización del cálculo de la heurística
+// en la expansión de nodos de la búsqueda A*
 __kernel void searchastar(__global infonode *infonodes,
 						 __global node *nodes,
 						 const ulong nsucesores,
 						 const ulong idEnd,
 						 const ulong nnodos){
 	int num = get_global_id(0);
-	int i, j;
 
-	//printf("GPU - num: %d, nsucesores: %ld", num, nsucesores);
 	if(num >= nsucesores){
-		num = 0; //For those threads which doesn't have an associate succesor.
+		num = 0;
 	}						 
 						 
 	nodes[num].h = heuristic(infonodes, nodes[num].type, idEnd);
-	//printf("GPU - num: %d, H: %f", num, nodes[num].h);	
-
 }

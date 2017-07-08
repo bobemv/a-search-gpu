@@ -128,7 +128,7 @@ void bubblesort(__global node *elems, const ulong numElems){
 
 }
 
-
+// Implementación B1: algoritmo A* íntegro en GPU
 __kernel void searchastar(__global infonode *infonodes,
 						 __global edge *conexiones,
 						 __global node *abiertos,
@@ -169,7 +169,6 @@ __kernel void searchastar(__global infonode *infonodes,
 			inicial.id = indexnodes;
 			inicial.g = 0;
 			inicial.parent = 0;
-
 			abiertos[nabiertos++] = inicial;
 		}
 
@@ -180,41 +179,29 @@ __kernel void searchastar(__global infonode *infonodes,
 			}
 
 			actual = abiertos[nabiertos-1];
-
 			nabiertos--;
-
-			
 			/*Generamos sucesores*/
 			nsucesores = genera_sucesores(sucesores, conexiones, actual, nedges, indexnodes);
-
 			indexnodes += nsucesores;
 			if (nsucesores == 0) {
 				break;
 			}
 			/* Expandimos cada sucesor*/
 			i = 0;
-
 			while (i < nsucesores) {
-				//printf("sucesores[%ld].id=%ld, sucesores[%ld].type=%ld\n", i, sucesores[i].id, i, sucesores[i].type);
-
 				sucesor = sucesores[i];
-
 				/*Si es el nodo final, terminamos.*/
 				if (sucesor.type == idEnd) {
 					found = true;
 					break;
 				}
-
-
 				/*Calculamos, f, g y h.*/
 				sucesor.g = actual.g + search_cost_node_2_node(conexiones, nedges, actual.type, sucesor.type);
 				sucesor.h = heuristic(infonodes, sucesor.type, idEnd);
 				sucesor.f = sucesor.g + sucesor.h;
-
 				/*Buscamos si hay un nodos con el mismo id en abiertos. Si existe Y con una f menor, se descarta el sucesor.*/
 				flagSkip = false;
 				j = 0;
-
 				while (j < nabiertos) {
 					if (abiertos[j].type == sucesor.type && abiertos[j].f <= sucesor.f) {
 						flagSkip = true;
@@ -222,12 +209,10 @@ __kernel void searchastar(__global infonode *infonodes,
 					}
 					j++;
 				}
-
 				if (flagSkip) {
 					i++;
 					continue;
 				}
-
 				/*Buscamos si hay un nodos con el mismo id en cerrados. Si existe Y con una f menor, se descarta el sucesor.*/
 				j = 0;
 				while (j < ncerrados) {
@@ -238,25 +223,16 @@ __kernel void searchastar(__global infonode *infonodes,
 					}
 					j++;
 				}
-
 				if (!flagSkip) {
 					abiertos[nabiertos++] = sucesor;
 				}
-
 				i++;
 
 			}
-
 			nsucesores = 0;
-
 			cerrados[ncerrados++] = actual;
-
-			bubblesort(abiertos, nabiertos); 
-
-					
+			bubblesort(abiertos, nabiertos); 	
 		}
-
-		
 		if(max <= reps){
 				//printf("TIME LIMIT\n");
 				sucesor.id = 0;
